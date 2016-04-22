@@ -1253,7 +1253,7 @@ public class MainActivity extends BaseMapActivity implements View.OnClickListene
             case Constans.AttributeEditType.EDIT_TYPE_ADD: {//新增线信息是要设置点位的唯一标记信息
                 Log.d("KO", "开放的接口 "+1);
                 lineEntity.setLineProjId(currentProjectId);
-                lineEntity.setLineId(UUID.randomUUID().toString());//设置线唯一ID
+                //lineEntity.setLineId(UUID.randomUUID().toString());//设置线唯一ID
                 DataBaseManagerHelper.getInstance().addOrUpdateOneLineToDb(lineEntity);
                 break;
             }

@@ -251,4 +251,5 @@
     <string name="change_all">导线/电缆(批量修改)</string>
     <string name="giveup_change">放弃(批量修改)</string>
     <string name="string_edit_wire_height">线高度</string>
+    <string name="string_edit_wire_height_hint">请选择线高度</string>
 </resources>

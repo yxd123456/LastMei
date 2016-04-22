@@ -82,6 +82,7 @@ public class PointAttributeActivity extends BaseAttributeActivity {
     @Override
     public void onAnalysisBundleData() {
         super.onAnalysisBundleData();
+        log("hua", "onAnalysisBundleData");
         //参数
         Bundle bundleParam = this.getIntent().getExtras();
         mapObj = (MapPoiEntity) bundleParam.getSerializable(Constans.POINT_OBJ_KEY);
@@ -109,6 +110,7 @@ public class PointAttributeActivity extends BaseAttributeActivity {
     }
     @Override
     public void pickerDialogHasFocus(PickerListViewDialog pickerScrollViewDialog) {
+        log("hua", "pickerDialogHasFocus");
         List<PickerItem> pickerItems = new ArrayList<>();
         String title = "";
 
@@ -201,10 +203,14 @@ public class PointAttributeActivity extends BaseAttributeActivity {
     }
     @Override
     public void onBeforeRightIconClick() {
+        log("hua", "onBeforeRightIconClick");
+
         mapObj.setPointEditType(Constans.AttributeEditType.EDIT_TYPE_REMOVE);
     }
     @Override
     public void onSetUpResult() {
+        log("hua", "onSetUpResult");
+
         String landForm = getString(mEditLandFrom.getTag());
         String electricPoleTypeCountStr = mEditElectricPoleTypeCount.getText().toString();
         int electricPoleTypeCount = TextUtils.isEmpty(electricPoleTypeCountStr) ? 0 : Integer.parseInt(electricPoleTypeCountStr);
@@ -314,6 +320,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
     }
     @Override
     public boolean onValidateInputSetUpResult() {
+        log("hua", "onValidateInputSetUpResult");
+
         int pointType = mapObj.getPointType();
         List<ValidaterEditText> validateList = new ArrayList<>();
         validateList.add(mEditAttributeName);
@@ -366,6 +374,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
      * 根据传入的参数修改界面编辑框中的数据和tag信息
      */
     private void setTextFieldTagAndText(MapPoiEntity mapObj) {
+        log("hua", "setTextFieldTagAndText");
+
         setNameAndNoteByBundleData(mapObj.getPointName(), mapObj.getPointNote());
 
         mEditLighting.setText(String.valueOf(mapObj.getPointLightingNum()));
@@ -416,6 +426,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
      * 更新界面显示资源
      */
     private void setTextFieldTextByTextFieldTag(MapPoiEntity mapObj) {
+        log("hua", "setTextFieldTextByTextFieldTag");
+
         DaoSession daoSession = this.getDaoSession();
         //在线程中根据传入的输入框ID更新显示tett信息
         //更新杆塔显示信息
@@ -468,6 +480,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
      * 通过点位类型来显示隐藏ui界面元素 点位编辑框
      */
     private void analysisUiTitleAndFieldVisibleByPointType(final int pointType) {
+        log("hua", "analysisUiTitleAndFieldVisibleByPointType");
+
         //编辑信息
         final View towertype = findViewById(R.id.id_linearlayout_towertype);
         towertype.setVisibility(View.GONE);
@@ -569,6 +583,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
      * 创建一行
      */
     private TableRow createNewTableRow() {
+        log("hua", "createNewTableRow");
+
         LayoutInflater inflater = LayoutInflater.from(this);
         TableRow tableRow = (TableRow) inflater.inflate(R.layout.tablerow_item, null);
 
@@ -597,6 +613,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
      * 添加一行
      */
     private void addNewTableRowToTableLayout(TableRow tableRow) {
+        log("hua", "addNewTableRowToTableLayout");
+
         mEditElectricCableTableLayout.addView(tableRow, mEditElectricCableTableLayout.getChildCount() - 1);
     }
     /**
@@ -617,6 +635,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
      * 计算立杆埋深
      **/
     private double calculateCoverDepth() {
+        log("hua", "calculateCoverDepth");
+
         double coverDepth = 0;
 
         if (mapObj.getPointType() != Constans.MapAttributeType.VERTICAL_WELDING) {
@@ -665,6 +685,8 @@ public class PointAttributeActivity extends BaseAttributeActivity {
      */
     @Override
     public void onInitView() {
+        log("hua", "onInitView");
+
         super.onInitView();
         setMdToolBar(R.id.id_material_toolbar);
         setMDToolBarBackEnable(true);

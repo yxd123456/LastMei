@@ -13,6 +13,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 
 import com.hz.MainApplication;
 import com.hz.R;
@@ -57,11 +58,12 @@ public abstract class BaseAttributeActivity extends BaseActivity implements View
     private DbUtils utils;
 
     private ChooseImagePopupWindow popupWindow;
-    private GalleryPopupWindow galleryPopupWindow;
+    protected GalleryPopupWindow galleryPopupWindow;
 
     private Button mEditAttributeOk = null;
     public ProjectEntity projectEntity;
     private String uuid;
+
 
 /**************************************************************************************************/
     //生命周期+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -108,8 +110,6 @@ public abstract class BaseAttributeActivity extends BaseActivity implements View
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case CAMERA_REQUEST_RESULT:
-                log("camera", "onActivityResult addGalleryItem");
-
                 addGalleryItem(mCurrentFilePath, mCurrentFileName);
 
                 break;
@@ -296,6 +296,7 @@ public abstract class BaseAttributeActivity extends BaseActivity implements View
                 entity.setImgFrom(Constans.ImageFrom.FILE);
                 entity.setImgAddress(filePath);// TODO: 2016/4/21
                 entity.setUuid(mapLineEntity.getLineId());
+                log("KK", "entity.setUuid(mapLineEntity.getLineId())"+entity.getUuid());
                 try {
                     utils.save(entity);
                 } catch (DbException e) {
