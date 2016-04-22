@@ -37,6 +37,7 @@ import com.hz.greendao.dao.PointGalleryEntity;
 import com.hz.greendao.dao.WireType;
 import com.hz.greendao.dao.WireTypeDao;
 import com.hz.entity.PickerItem;
+import com.hz.util.MyList;
 import com.hz.util.SharedPreferencesUtils;
 import com.hz.util.okhttp_extend.FileUtil;
 import com.hz.view.ValidaterEditText;
@@ -150,7 +151,7 @@ public class LineAttributeActivity extends BaseAttributeActivity {
             SharedPreferencesUtils.setParam(this, LINE_NOTE, mEditAttributeNote.getText().toString());
         }
 
-            List<MapLineItemEntity> lineItemEntityList = new ArrayList<>();
+            MyList lineItemEntityList = new MyList();
 
             for (TableRow tableRow : findElectricCableTableLayoutChildTableRow()) {
                 log("ye", "执行你一次");
@@ -199,11 +200,9 @@ public class LineAttributeActivity extends BaseAttributeActivity {
                 itemEntity.setLineItemRemoved(removeIdentifier);
                 Log.d("KO", itemEntity.getLineItemRemoved()+"   6");
                 lineItemEntityList.add(itemEntity);
-                //utils.save();
             }
-            Log.d("KO", lineItemEntityList.size()+" 7");
 
-            if(MainActivity.flag_change) {
+        if(MainActivity.flag_change) {
                 FileUtil.write(this, lineItemEntityList, "test");
             }
 
