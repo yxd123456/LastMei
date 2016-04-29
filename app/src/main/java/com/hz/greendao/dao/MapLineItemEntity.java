@@ -10,7 +10,6 @@ package com.hz.greendao.dao;
 public class MapLineItemEntity implements java.io.Serializable {
 
     /** Not-null value. */
-    private String id;
     private String lineItemId;
     private String lineItemModeId;
     private int lineItemWireType;
@@ -38,14 +37,6 @@ public class MapLineItemEntity implements java.io.Serializable {
         this.lineItemStatus = lineItemStatus;
         this.lineItemRemoved = lineItemRemoved;
         this.LineItemLineId = LineItemLineId;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     /** Not-null value. */

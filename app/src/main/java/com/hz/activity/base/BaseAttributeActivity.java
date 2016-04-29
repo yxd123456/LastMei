@@ -13,16 +13,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
 
-import com.hz.MainApplication;
 import com.hz.R;
 import com.hz.adapter.ProjectGalleryAdapter;
 import com.hz.common.Constans;
 import com.hz.dialog.PickerListViewDialog;
 import com.hz.entity.GalleryListItemEntity;
 import com.hz.fragment.ProjectListFragment;
-import com.hz.greendao.dao.MapLineEntity;
 import com.hz.greendao.dao.PointGalleryEntity;
 import com.hz.greendao.dao.PointGalleryEntityDao;
 import com.hz.greendao.dao.ProjectEntity;
@@ -31,8 +28,6 @@ import com.hz.popupwindow.GalleryPopupWindow;
 import com.hz.util.DateUtil;
 import com.hz.helper.StroageHelper;
 import com.hz.view.ValidaterEditText;
-import com.lidroid.xutils.DbUtils;
-import com.lidroid.xutils.exception.DbException;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -55,23 +50,18 @@ public abstract class BaseAttributeActivity extends BaseActivity implements View
     public ProjectGalleryAdapter mGalleryAdapter;
     public ValidaterEditText mEditAttributeName;//地图属性名称
     public ValidaterEditText mEditAttributeNote;//地图属性备注
-    private DbUtils utils;
 
     private ChooseImagePopupWindow popupWindow;
-    protected GalleryPopupWindow galleryPopupWindow;
+    private GalleryPopupWindow galleryPopupWindow;
 
     private Button mEditAttributeOk = null;
     public ProjectEntity projectEntity;
-    private String uuid;
-
 
 /**************************************************************************************************/
     //生命周期+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        utils = ((MainApplication)getApplication()).getDbUtils();
-        uuid = UUID.randomUUID().toString();
     }
     @Override
     protected void onDestroy() {
@@ -110,8 +100,9 @@ public abstract class BaseAttributeActivity extends BaseActivity implements View
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case CAMERA_REQUEST_RESULT:
-                addGalleryItem(mCurrentFilePath, mCurrentFileName);
+                log("camera", "onActivityResult addGalleryItem");
 
+                addGalleryItem(mCurrentFilePath, mCurrentFileName);
                 break;
         }
     }
@@ -284,32 +275,6 @@ public abstract class BaseAttributeActivity extends BaseActivity implements View
         }
     }
 
-    public void addGalleryItem(String filePath, String fileName, MapLineEntity mapLineEntity) {
-        log("camera", "addGalleryItem");
-
-        if (filePath != null) {
-            File file = new File(filePath);
-            if (file.isFile() && file.length() > 1000) {
-                //保存图片到列表
-                PointGalleryEntity entity = new PointGalleryEntity();
-                entity.setImgId(fileName);
-                entity.setImgFrom(Constans.ImageFrom.FILE);
-                entity.setImgAddress(filePath);// TODO: 2016/4/21
-                entity.setUuid(mapLineEntity.getLineId());
-                log("KK", "entity.setUuid(mapLineEntity.getLineId())"+entity.getUuid());
-                try {
-                    utils.save(entity);
-                } catch (DbException e) {
-                    e.printStackTrace();
-                }
-                mGalleryEntityList.add(mGalleryEntityList.size() - 1, entity);
-                mGalleryAdapter.notifyDataSetChanged();
-                mRecyclerGallery.smoothScrollToPosition(mGalleryEntityList.size() + 1);
-            }
-
-        }
-    }
-
     public void addGalleryItem(String filePath, String fileName) {
         log("camera", "addGalleryItem");
 
@@ -320,12 +285,11 @@ public abstract class BaseAttributeActivity extends BaseActivity implements View
                 PointGalleryEntity entity = new PointGalleryEntity();
                 entity.setImgId(fileName);
                 entity.setImgFrom(Constans.ImageFrom.FILE);
-                entity.setImgAddress(filePath);// TODO: 2016/4/21
+                entity.setImgAddress(filePath);
                 mGalleryEntityList.add(mGalleryEntityList.size() - 1, entity);
                 mGalleryAdapter.notifyDataSetChanged();
                 mRecyclerGallery.smoothScrollToPosition(mGalleryEntityList.size() + 1);
             }
-
         }
     }
     /**
