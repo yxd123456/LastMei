@@ -8,11 +8,19 @@ import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.Polyline;
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.DistanceUtil;
+import com.baidu.platform.comapi.map.A;
+import com.baidu.platform.comapi.util.f;
 import com.hz.activity.MainActivity;
 import com.hz.common.Constans;
+import com.hz.entity.Lines;
 import com.hz.greendao.dao.MapLineEntity;
 import com.hz.greendao.dao.MapLineItemEntity;
 import com.hz.greendao.dao.MapPoiEntity;
+import com.hz.util.okhttp_extend.FileUtil;
+import com.lidroid.xutils.DbUtils;
+import com.lidroid.xutils.exception.DbException;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -25,6 +33,9 @@ public class BatchAddConnectWireHelper {
     private Polyline tempBatchLines;
     private int num = 0;
     private ArrayList<String> markerIds;
+
+    private DbUtils dbUtils;
+    private boolean flag_test = false;
 
     public BatchAddConnectWireHelper() {
         Log.d("Test",getClass().getSimpleName()+"被调用了");

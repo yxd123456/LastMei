@@ -16,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import com.hz.MainApplication;
 import com.hz.R;
 import com.hz.activity.base.BaseActivity;
 import com.hz.adapter.ProjectGalleryPreviewAdapter;
@@ -29,8 +30,12 @@ import com.hz.service.ProjectMapDataUploadService;
 import com.hz.util.DensityUtil;
 import com.hz.util.DeviceUtils;
 import com.hz.util.HttpManager;
+import com.hz.util.MyList;
 import com.hz.util.NetworkManager;
 import com.hz.view.PopupToast;
+import com.lidroid.xutils.DbUtils;
+import com.lidroid.xutils.db.sqlite.WhereBuilder;
+import com.lidroid.xutils.exception.DbException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +55,8 @@ public class ProjectDataPreviewActivity extends BaseActivity {
     public ProjectGalleryPreviewAdapter projectGalleryPreviewAdapter;
     public Handler mUiHandler = new Handler();//操作uihandler
     private List<PointGalleryEntity> mGalleryEntityList = new ArrayList<>();
+    private DbUtils utils;
+    List<PointGalleryEntity> list2 = null;
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     @Override//初始化
@@ -182,7 +189,9 @@ public class ProjectDataPreviewActivity extends BaseActivity {
                         });
                         break;
                     }
+
                 }
+
             }
             @Override
             public void onDone(String imgId) {
@@ -212,6 +221,16 @@ public class ProjectDataPreviewActivity extends BaseActivity {
         initData();
     }
     private void initData() {
+
+        utils = ((MainApplication)getApplication()).getDbUtils();
+
+        try {
+            list2 = utils.findAll(PointGalleryEntity.class);
+
+        } catch (DbException e) {
+            e.printStackTrace();
+        }
+
         mProjectEntity = (ProjectEntity) this.getIntent().getSerializableExtra(ProjectListFragment.PROJECT_OBJ_KEY);
         if (mProjectEntity == null) {
             return;
@@ -220,6 +239,7 @@ public class ProjectDataPreviewActivity extends BaseActivity {
         long userId = SharedPreferencesHelper.getUserId(this);
         mGalleryEntityList.clear();
         mGalleryEntityList.addAll(DataBaseManagerHelper.getInstance().getAllProjectImagesByProjectId(mProjectEntity.getId(), userId));
+        mGalleryEntityList.addAll(list2);
         if (projectGalleryPreviewAdapter != null) {
             projectGalleryPreviewAdapter.notifyDataSetChanged();
         }

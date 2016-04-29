@@ -36,6 +36,8 @@ public class PickerListViewDialog extends AppCompatDialog implements View.OnClic
     private PickerItem currentSelectItem;//保存当前选中的数据
     private PickerListViewAdapter mPickerListViewAdapter;
 
+
+
     private EditText bindEditText;//pickerDialog绑定EditText
     private ClearAbleEditText mClearEdittext;//可以清空输入输入框
     private ListView mPickerListview;

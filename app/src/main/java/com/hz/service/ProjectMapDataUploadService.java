@@ -46,6 +46,7 @@ import java.util.List;
  * @author long
  */
 public class ProjectMapDataUploadService extends Service {
+
     private static final String TAG = ProjectMapDataUploadService.class.getSimpleName();
     private static final MediaType MEDIA_TYPE_JPEG = MediaType.parse("image/jpeg");
     private ProjectEntity mProjectEntity;//当前上传的项目

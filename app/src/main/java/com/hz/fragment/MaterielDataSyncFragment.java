@@ -36,6 +36,7 @@ import de.greenrobot.dao.AbstractDao;
  * 材料数据同步fragment
  */
 public class MaterielDataSyncFragment extends BaseFragment {
+
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     public static final String TAG = MaterielDataSyncFragment.class.getSimpleName();
     private static ProgressHUD mProgressHUD = null;

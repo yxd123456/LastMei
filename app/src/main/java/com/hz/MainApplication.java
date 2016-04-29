@@ -10,8 +10,10 @@ import com.hz.greendao.dao.DaoSession;
 import com.hz.helper.DataBaseManagerHelper;
 import com.hz.helper.MapIconHelper;
 import com.hz.helper.StroageHelper;
+import com.hz.util.DbUtil;
 import com.hz.util.HttpManager;
 import com.hz.util.PackageUtil;
+import com.lidroid.xutils.DbUtils;
 import com.nostra13.universalimageloader.cache.disc.impl.UnlimitedDiscCache;
 import com.nostra13.universalimageloader.cache.disc.naming.Md5FileNameGenerator;
 import com.nostra13.universalimageloader.cache.memory.impl.WeakMemoryCache;
@@ -22,13 +24,14 @@ import com.nostra13.universalimageloader.core.assist.QueueProcessingType;
 import com.nostra13.universalimageloader.core.decode.BaseImageDecoder;
 import com.nostra13.universalimageloader.core.download.BaseImageDownloader;
 import com.squareup.leakcanary.LeakCanary;
+
 import java.io.File;
 
 import cn.jpush.android.api.JPushInterface;
 
 /**
  * @author taol
- * @see Application
+ * @see android.app.Application
  * <p/>
  * *
  */
@@ -36,10 +39,17 @@ public class MainApplication extends Application {
     public static final String TAG = MainApplication.class.getSimpleName();
     public DaoMaster daoMaster;//数据库操作全局对象
 
+    private static DbUtils utils;
+
+    public static DbUtils getDbUtils(){
+        return  utils;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
         initComponents();
+        utils = DbUtils.create(this);
     }
 
     /**

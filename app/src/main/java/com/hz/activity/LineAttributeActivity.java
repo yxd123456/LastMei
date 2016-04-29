@@ -3,34 +3,50 @@ package com.hz.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.AppCompatSpinner;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.DistanceUtil;
 import com.hz.MainApplication;
 import com.hz.R;
 import com.hz.activity.base.BaseAttributeActivity;
+import com.hz.adapter.ProjectGalleryAdapter;
 import com.hz.common.Constans;
 import com.hz.dialog.PickerListViewDialog;
+import com.hz.entity.GalleryListItemEntity;
 import com.hz.greendao.dao.ConductorWireEntity;
 import com.hz.greendao.dao.ConductorWireEntityDao;
 import com.hz.greendao.dao.DaoSession;
 import com.hz.greendao.dao.MapLineEntity;
 import com.hz.greendao.dao.MapLineItemEntity;
+import com.hz.greendao.dao.PointGalleryEntity;
 import com.hz.greendao.dao.WireType;
 import com.hz.greendao.dao.WireTypeDao;
 import com.hz.entity.PickerItem;
+import com.hz.util.MyList;
 import com.hz.util.SharedPreferencesUtils;
 import com.hz.util.okhttp_extend.FileUtil;
 import com.hz.view.ValidaterEditText;
+import com.lidroid.xutils.DbUtils;
+import com.lidroid.xutils.db.sqlite.Selector;
+import com.lidroid.xutils.db.sqlite.WhereBuilder;
+import com.lidroid.xutils.exception.DbException;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,18 +66,18 @@ public class LineAttributeActivity extends BaseAttributeActivity {
     private TextView mEditLineLength;//导线/电缆长度
     private TableLayout mEditElectricCableTableLayout;//导线/电缆 属性
     private ArrayList<MapLineEntity> list_mapObj;
-
-    private ValidaterEditText et_line_wire_height;
-    private MapLineEntity entity_height;
-
-
+    private ValidaterEditText et_lwh;
+    private boolean flag = true;
+    private boolean flag_hasEntity = false;
+    private ViewGroup viewGroup;
+    private LinearLayout ll_wire_height;
+    private DbUtils utils;
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_line_attribute);
-
     }
 
     @Override
@@ -117,13 +133,11 @@ public class LineAttributeActivity extends BaseAttributeActivity {
      */
     @Override
     public void onSetUpResult() {
-
-
-
         //移除默认图片
         log("ye", "onSetUpResult仔细");
        /* mGalleryEntityList.remove(mGalleryEntityList.size() - 1);
         mapObj.setPointGalleryLists(mGalleryEntityList);*/
+
         mapObj.setLineWireTypeId(getString(mEditWireType.getTag()));
         mapObj.setLineName(mEditAttributeName.getText().toString());
         mapObj.setLineNote(mEditAttributeNote.getText().toString());
@@ -137,7 +151,7 @@ public class LineAttributeActivity extends BaseAttributeActivity {
             SharedPreferencesUtils.setParam(this, LINE_NOTE, mEditAttributeNote.getText().toString());
         }
 
-            List<MapLineItemEntity> lineItemEntityList = new ArrayList<>();
+            MyList lineItemEntityList = new MyList();
 
             for (TableRow tableRow : findElectricCableTableLayoutChildTableRow()) {
                 log("ye", "执行你一次");
@@ -187,9 +201,8 @@ public class LineAttributeActivity extends BaseAttributeActivity {
                 Log.d("KO", itemEntity.getLineItemRemoved()+"   6");
                 lineItemEntityList.add(itemEntity);
             }
-            Log.d("KO", lineItemEntityList.size()+" 7");
 
-            if(MainActivity.flag_change) {
+        if(MainActivity.flag_change) {
                 FileUtil.write(this, lineItemEntityList, "test");
             }
 
@@ -198,21 +211,74 @@ public class LineAttributeActivity extends BaseAttributeActivity {
         //设置bundle
         Bundle bundle = new Bundle();
         bundle.putSerializable(Constans.LINE_OBJ_KEY, mapObj);
-        Log.d("KO", mapObj.getLineName()+"  8");
         //设置intent
         Intent resultIntent = new Intent();
         resultIntent.putExtras(bundle);
 
-        String height = et_line_wire_height.getText().toString();
-        MapLineEntity entity = new MapLineEntity();
-        entity.setLineId(mapObj.getLineId());
-        entity.setLineWireHeight(Integer.parseInt(height));
+     /*   try {
+            utils.deleteAll(MapLineEntity.class);
+        } catch (DbException e) {
+            e.printStackTrace();
+        }*/
+
+
+
 
 
         //设置返回信息
         this.setResult(Constans.RequestCode.LINE_ATTRIBUTE_EDIT_REQUESTCODE, resultIntent);
+
+
+        String height = et_lwh.getText().toString();
+        MapLineEntity entity = new MapLineEntity();
+        //entity.setId(1);
+        entity.setLineId(mapObj.getLineId());
+        log("KK", "mapObj.getLineId()2"+mapObj.getLineId());
+        if(height != null){
+            entity.setLineWireHeight(height);
+        } else {
+            entity.setLineWireHeight("");
+        }
+
+        try {
+            if(!flag_hasEntity){
+                utils.save(entity);
+            }else{
+                utils.update(entity, WhereBuilder.b("lineId", "=", mapObj.getLineId()), "lineWireHeight");
+            }
+        } catch (DbException e) {
+            e.printStackTrace();
+        }
+
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        switch (requestCode) {
+            case CAMERA_REQUEST_RESULT:
+
+                addGalleryItem(mCurrentFilePath, mCurrentFileName, mapObj);
+                toast("这个方法调用啦");
+                break;
+        }
+    }
+
+    @Override
+    public void onOkClick(List<GalleryListItemEntity> checkStringList) {
+        if (checkStringList != null && !checkStringList.isEmpty()) {
+            for (GalleryListItemEntity itemEntity : checkStringList) {
+                String name = new File(itemEntity.imagePath).getName();
+                int lastIndex = name.lastIndexOf(".");
+                if (lastIndex <= 0) {
+                    continue;
+                }
+                name = name.substring(0, lastIndex);
+                addGalleryItem(itemEntity.imagePath, name, mapObj);
+            }
+        }
+        galleryPopupWindow.dismiss();
+    }
 
     @Override
     public boolean onValidateInputSetUpResult() {
@@ -247,19 +313,19 @@ public class LineAttributeActivity extends BaseAttributeActivity {
     @Override
     public void onAnalysisBundleData() {
         super.onAnalysisBundleData();
+
         //获取传入参数
         Bundle bundleParam = this.getIntent().getExtras();
         mapObj = (MapLineEntity) bundleParam.getSerializable(Constans.LINE_OBJ_KEY);
-        Log.d("KO", "执行力看1");
         if (mapObj == null) {
             list_mapObj = (ArrayList<MapLineEntity>)(bundleParam.getSerializable(Constans.LINE_OBJ_KEY_TEST));
             if(list_mapObj == null)
                 analysisUiTitleAndFieldVisibleByPointType(list_mapObj.get(0).getLineType());
                 return;
         }
-
-
-        Log.d("KO", "执行力看2");
+        if(mapObj.getLineId() == null)
+            mapObj.setLineId(UUID.randomUUID().toString());
+        log("KK", "mapObj.getLineId()   "+mapObj.getLineId());
         //根据线类型显示不同的标题和控制组件的显示隐藏
         analysisUiTitleAndFieldVisibleByPointType(mapObj.getLineType());
         //根据参数显示修改或者新增
@@ -269,10 +335,61 @@ public class LineAttributeActivity extends BaseAttributeActivity {
         //根据textfield的tag到数据库查询数据库文本信息
         setTextFieldTextByTextFieldTag(mapObj);
 
-        final View gallery = findViewById(R.id.gallery);
-        
 
+
+     /* try {
+            utils.deleteAll(MapLineEntity.class);
+        } catch (DbException e) {
+            e.printStackTrace();
+        }*/
+
+        try {
+            List<MapLineEntity> list = utils.findAll(MapLineEntity.class);
+            if(list != null && list.size() != 0 &&mapObj.getLineId() != null){
+                for (MapLineEntity entity : list){
+                    try{
+                        if(entity.getLineId()==null){
+                            continue;
+                        }
+                        if(entity.getLineId().equals(mapObj.getLineId())){
+                            if(entity.getLineWireHeight()==null){
+                                et_lwh.setText("");
+                            }else{
+                                et_lwh.setText(entity.getLineWireHeight()+"");
+                            }
+                            flag_hasEntity = true;
+                            break;
+                        }
+                    }catch (Exception e){
+                        toast("异常！");
+                    }
+
+                }
+            }
+            //
+        } catch (DbException e) {
+            e.printStackTrace();
+        }
+
+        //// TODO: 2016/4/21 dododo
+        try {
+            List<PointGalleryEntity> list2 = utils.findAll(PointGalleryEntity.class, WhereBuilder.b("uuid", "=", mapObj.getLineId()));
+            toast((list2 == null)+"");
+            if(list2 != null && list2.size() > 0){
+                toast(list2.size()+"");
+                for (PointGalleryEntity entity:list2
+                     ) {
+                    toast(entity.getUuid());
+                }
+                mGalleryEntityList.addAll(list2);
+            }
+        } catch (DbException e) {
+            e.printStackTrace();
+
+        }
     }
+
+
     @Override
     public void onClick(View v) {
         super.onClick(v);
@@ -283,8 +400,6 @@ public class LineAttributeActivity extends BaseAttributeActivity {
                 break;
         }
     }
-
-
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     private void setTextFieldTextByTextFieldTag(MapLineEntity mapObj) {
@@ -329,13 +444,20 @@ public class LineAttributeActivity extends BaseAttributeActivity {
         linelength.setVisibility(View.GONE);
         View specificationNumber = findViewById(R.id.id_linearlayout_specificationnumber);
         specificationNumber.setVisibility(View.GONE);
-
+        if(mRecyclerGallery == null){
+            mRecyclerGallery = (RecyclerView) findViewById(R.id.id_recyclerview_gallery);
+        }
+        viewGroup = (ViewGroup) mRecyclerGallery.getParent();
+        viewGroup.setVisibility(View.INVISIBLE);
+        ll_wire_height.setVisibility(View.GONE);
         ArrayList<View> animateVeiwVisible = new ArrayList<>();
 
         switch (lineType) {
             case Constans.MapAttributeType.CROSS_LINE://跨越线
                 setMDToolBarTitle(R.string.string_crossline);
                 animateVeiwVisible.add(wiretype);
+                viewGroup.setVisibility(View.VISIBLE);
+                ll_wire_height.setVisibility(View.VISIBLE);
                 break;
             case Constans.MapAttributeType.WIRE_ELECTRIC_CABLE:
                 if (mapObj.getLineEditType() == Constans.AttributeEditType.EDIT_TYPE_LINE_BATCHADD) {
@@ -476,6 +598,14 @@ public class LineAttributeActivity extends BaseAttributeActivity {
         setMdToolBar(R.id.id_material_toolbar);
         setMDToolBarBackEnable(true);
         setMDToolBarTitle(R.string.title_line_attribute);
+
+        utils = ((MainApplication)getApplication()).getDbUtils();
+        et_lwh = (ValidaterEditText) findViewById(R.id.id_edit_wire_height);
+        ll_wire_height = (LinearLayout) findViewById(R.id.id_linearlayout_wire_height);
+
+        //设置数据源
+        //设置布局管理器
+
         //跨越线属性
         mEditWireType = (ValidaterEditText) findViewById(R.id.id_edit_wiretype);
 
@@ -495,10 +625,5 @@ public class LineAttributeActivity extends BaseAttributeActivity {
         PickerListViewDialog mWireTypePickerScrollViewDialog = new PickerListViewDialog(this);
         mWireTypePickerScrollViewDialog.setPickerDialogBindEditText(mEditWireType);
         mWireTypePickerScrollViewDialog.setOnPickerDialogHasFocusListener(this);
-
-
-
-        et_line_wire_height = (ValidaterEditText) findViewById(R.id.id_edit_wireHeight);
-
     }
 }

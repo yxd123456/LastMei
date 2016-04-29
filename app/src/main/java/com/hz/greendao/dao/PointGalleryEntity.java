@@ -10,6 +10,8 @@ package com.hz.greendao.dao;
 public class PointGalleryEntity implements java.io.Serializable {
 
     /** Not-null value. */
+    private int id;
+    private String uuid;
     private String imgId;
     /** Not-null value. */
     private String imgPointId;
@@ -37,6 +39,22 @@ public class PointGalleryEntity implements java.io.Serializable {
         this.imgUploadProgress = imgUploadProgress;
         this.imgRemoved = imgRemoved;
         this.imgNeedToUpload = imgNeedToUpload;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     /** Not-null value. */
