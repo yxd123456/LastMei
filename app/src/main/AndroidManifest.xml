@@ -95,7 +95,7 @@
         <!-- 百度地图apiKey配置 -->
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
-            android:value="${mapKey}" />
+            android:value="uWaEnyfAiknXZzfjY0answAZu2Spq57P" />
 
         <!-- 百度地图定位服务 不加上的话可以定位但是定位比较慢 -->
         <service

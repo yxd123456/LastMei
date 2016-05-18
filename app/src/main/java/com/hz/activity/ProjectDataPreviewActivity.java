@@ -16,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import com.hz.MainApplication;
 import com.hz.R;
 import com.hz.activity.base.BaseActivity;
 import com.hz.adapter.ProjectGalleryPreviewAdapter;
@@ -26,11 +27,14 @@ import com.hz.helper.CommonHelper;
 import com.hz.helper.DataBaseManagerHelper;
 import com.hz.helper.SharedPreferencesHelper;
 import com.hz.service.ProjectMapDataUploadService;
+import com.hz.util.DbUtil;
 import com.hz.util.DensityUtil;
 import com.hz.util.DeviceUtils;
 import com.hz.util.HttpManager;
 import com.hz.util.NetworkManager;
 import com.hz.view.PopupToast;
+import com.lidroid.xutils.DbUtils;
+import com.lidroid.xutils.exception.DbException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +44,7 @@ import java.util.List;
  * 启动模式SingleTask
  */
 public class ProjectDataPreviewActivity extends BaseActivity {
+
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     public static final String TAG = ProjectDataPreviewActivity.class.getSimpleName();
     public static final String KEY_UPLOAD_PROJECTDATA_ENTITY = "KEY_UPLOAD_PROJECTDATA_ENTITY";//上传项目数据key
@@ -50,6 +55,8 @@ public class ProjectDataPreviewActivity extends BaseActivity {
     public ProjectGalleryPreviewAdapter projectGalleryPreviewAdapter;
     public Handler mUiHandler = new Handler();//操作uihandler
     private List<PointGalleryEntity> mGalleryEntityList = new ArrayList<>();
+
+    private DbUtils utils;
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
     @Override//初始化
@@ -171,6 +178,7 @@ public class ProjectDataPreviewActivity extends BaseActivity {
             public void onProgress(String imgId, int uploadProgress) {
                 for (int i = 0; i < mGalleryEntityList.size(); i++) {
                     PointGalleryEntity galleryEntity = mGalleryEntityList.get(i);
+
                     if (TextUtils.equals(galleryEntity.getImgId(), imgId)) {
                         galleryEntity.setImgUploadProgress(uploadProgress);
                         final int position = i;
@@ -220,6 +228,17 @@ public class ProjectDataPreviewActivity extends BaseActivity {
         long userId = SharedPreferencesHelper.getUserId(this);
         mGalleryEntityList.clear();
         mGalleryEntityList.addAll(DataBaseManagerHelper.getInstance().getAllProjectImagesByProjectId(mProjectEntity.getId(), userId));
+
+        List<PointGalleryEntity> list = null;
+        try {
+            list = utils.findAll(PointGalleryEntity.class);
+        } catch (DbException e) {
+            e.printStackTrace();
+        }
+        if(list != null){
+            mGalleryEntityList.addAll(list);
+        }
+
         if (projectGalleryPreviewAdapter != null) {
             projectGalleryPreviewAdapter.notifyDataSetChanged();
         }
@@ -230,6 +249,7 @@ public class ProjectDataPreviewActivity extends BaseActivity {
         mTextViewLineNum.setText(lineNum + "条");*/
     }
     private void initView() {
+        utils = ((MainApplication)getApplication()).getDbUtils();
         setMdToolBar(R.id.id_material_toolbar);
         setMDToolBarBackEnable(true);
         setMDToolBarTitle(R.string.title_activity_projectmapdata_preview);
