@@ -6,11 +6,10 @@
         android:name="com.hz.permission.JPUSH_MESSAGE"
         android:protectionLevel="signature" />
 
-    <!--往sdcard中写入数据的权限 -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
-    <!--在sdcard中创建/删除文件的权限 -->
-    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"></uses-permission>
-
+    <!-- 往sdcard中写入数据的权限 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <!-- 在sdcard中创建/删除文件的权限 -->
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
     <uses-permission android:name="android.permission.BAIDU_LOCATION_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -45,6 +44,8 @@
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_PRECISE_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <!-- 百度地图所需权限列表 end -->
     <application
@@ -69,13 +70,8 @@
         <activity
             android:name=".activity.MaterialHomeActivity"
             android:screenOrientation="portrait">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
 
+        </activity>
 
         <!-- 地图activity -->
         <activity android:name=".activity.MainActivity" />
@@ -84,13 +80,17 @@
         <!-- 地图线条信息编辑activity -->
         <activity android:name=".activity.LineAttributeActivity" />
         <!-- 连接点位之间的导线线缆activity -->
-        <activity android:name=".activity.ProjectDataPreviewActivity" android:launchMode="singleTask" />
+        <activity
+            android:name=".activity.ProjectDataPreviewActivity"
+            android:launchMode="singleTask" />
         <!-- 材料信息信息页面activity -->
         <activity android:name=".activity.MaterielDetailActivity" />
         <!-- 图片预览组件 -->
-        <activity android:name=".activity.ImagePreviewActivity"/>
+        <activity android:name=".activity.ImagePreviewActivity" />
         <!-- 登陆系统 -->
-        <activity android:name=".activity.LoginActivity" android:launchMode="singleTask"/>
+        <activity
+            android:name=".activity.LoginActivity"
+            android:launchMode="singleTask" />
 
         <!-- 百度地图apiKey配置 -->
         <meta-data
@@ -191,11 +191,21 @@
             android:name="JPUSH_APPKEY"
             android:value="7a5331a2e8577539f95c9a23" />
 
+        <!-- 友盟统计 -->
+        <meta-data
+            android:name="UMENG_APPKEY"
+            android:value="56a1d506e0f55ad189002445" />
+        <meta-data
+            android:name="UMENG_CHANNEL"
+            android:value="PageDownload" />
 
+        <activity android:name=".activity.base.WebMapActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-        <!--友盟统计-->
-        <meta-data android:value="56a1d506e0f55ad189002445" android:name="UMENG_APPKEY"/>
-        <meta-data android:value="PageDownload" android:name="UMENG_CHANNEL"/>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
