@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.hz.activity.base.WebMapActivity">
+    tools:context=".activity.base.WebMapActivity">
 
 
 
@@ -12,9 +12,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-        <!--<LinearLayout
+        <LinearLayout
             android:layout_marginTop="15dp"
-            android:layout_width="25dp"
+            android:layout_width="50dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:layout_gravity="right">
@@ -30,29 +30,33 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="B"
+                    android:onClick="B"
                     />
 
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="C"
+                    android:onClick="C"
                     />
 
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="D"
+                    android:onClick="D"
                     />
 
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="E"
+                    android:onClick="E"
                     />
 
-        </LinearLayout>-->
+        </LinearLayout>
 
-        <include layout="@layout/activity_main_map_operatelayer" />
+
 
 
         <Button
@@ -63,13 +67,43 @@
             android:layout_marginBottom="20dp"
             android:onClick="resetLocation"/>
 
-       <!-- <ImageView
+       <ImageView
+           android:id="@+id/iv_center"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:scaleX="0.5"
             android:scaleY="0.5"
             android:src="@drawable/map_point_red"
-            android:layout_gravity="center"/>-->
+            android:layout_gravity="center"
+            android:visibility="invisible"/>
+
+        <RadioGroup
+            android:id="@+id/rg_kuayuexian"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="80dp"
+            android:orientation="horizontal"
+            android:visibility="invisible">
+                <RadioButton
+                    android:id="@+id/rb1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="放弃"
+                    android:onClick="giveUp"/>
+                <RadioButton
+                    android:id="@+id/rb2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="sP"
+                    android:text="设为起点"/>
+                <RadioButton
+                    android:id="@+id/rb3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="设为终点"
+                    android:onClick="eP"/>
+        </RadioGroup>
 
 
 </FrameLayout>

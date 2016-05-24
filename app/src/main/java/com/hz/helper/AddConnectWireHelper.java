@@ -2,7 +2,6 @@ package com.hz.helper;
 
 import android.util.Log;
 
-import com.hz.activity.MainActivity;
 import com.hz.greendao.dao.MapPoiEntity;
 
 import java.util.HashMap;
@@ -45,9 +44,10 @@ public class AddConnectWireHelper {
      * 检查开始和结束的点位时候相同
      **/
     public boolean isIdEquals() {
-        MapPoiEntity startEntity = get(MainActivity.LINE_START_KEY);
+       /* MapPoiEntity startEntity = get(MainActivity.LINE_START_KEY);
         MapPoiEntity endEntity = get(MainActivity.LINE_END_KEY);
-        return startEntity.getPointId().equals(endEntity.getPointId());
+        return startEntity.getPointId().equals(endEntity.getPointId());*/
+        return false;
     }
 
     public MapPoiEntity get(String key) {

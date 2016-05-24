@@ -10,10 +10,9 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.hz.R;
-import com.hz.activity.MainActivity;
+import com.hz.activity.base.WebMapActivity;
 import com.hz.activity.ProjectDataPreviewActivity;
 import com.hz.activity.base.BaseActivity;
 import com.hz.common.Constans;
@@ -87,7 +86,7 @@ public class ProjectListAdapter extends RecyclerView.Adapter<ProjectListAdapter.
 
                 BaseActivity baseActivity = baseActivityWeakReference.get();
                 if (baseActivity != null) {
-                    Intent mainActivity = new Intent(baseActivity, MainActivity.class);
+                    Intent mainActivity = new Intent(baseActivity, WebMapActivity.class);
                     mainActivity.putExtra(ProjectListFragment.PROJECT_OBJ_KEY, item);
                     baseActivity.startActivityForResult(mainActivity, ProjectListFragment.REQUESTCODE_TOMAP);
                     viewHolder.rootView.postDelayed(new Runnable() {

@@ -3,12 +3,9 @@ package com.hz.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.AppCompatSpinner;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,14 +14,12 @@ import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.baidu.mapapi.model.LatLng;
 import com.baidu.mapapi.utils.DistanceUtil;
 import com.hz.MainApplication;
 import com.hz.R;
 import com.hz.activity.base.BaseAttributeActivity;
-import com.hz.adapter.ProjectGalleryAdapter;
 import com.hz.common.Constans;
 import com.hz.dialog.PickerListViewDialog;
 import com.hz.entity.GalleryListItemEntity;
@@ -41,7 +36,6 @@ import com.hz.util.SharedPreferencesUtils;
 import com.hz.util.okhttp_extend.FileUtil;
 import com.hz.view.ValidaterEditText;
 import com.lidroid.xutils.DbUtils;
-import com.lidroid.xutils.db.sqlite.Selector;
 import com.lidroid.xutils.db.sqlite.WhereBuilder;
 import com.lidroid.xutils.exception.DbException;
 
@@ -117,12 +111,12 @@ public class LineAttributeActivity extends BaseAttributeActivity {
     @Override
     public void onBeforeRightIconClick() {
 
-        if(MainActivity.flag_change){
+       /* if(MainActivity.flag_change){
             MainActivity.flag_delete = true;
             mapObj.setLineEditType(Constans.AttributeEditType.EDIT_TYPE_REMOVE_SELECT);
         } else {
             mapObj.setLineEditType(Constans.AttributeEditType.EDIT_TYPE_REMOVE);
-        }
+        }*/
     }
 
 
@@ -144,11 +138,11 @@ public class LineAttributeActivity extends BaseAttributeActivity {
         mapObj.setLineLength(Double.parseDouble(String.valueOf(mEditLineLength.getText().toString())));
         mapObj.setLineSpecificationNumber(Integer.parseInt(mEditSpecificationNumber.getText().toString()));
 
-        if(MainActivity.flag_change){
+      /*  if(MainActivity.flag_change){
             SharedPreferencesUtils.setParam(this, LINE_NAME, mEditAttributeName.getText().toString());
             SharedPreferencesUtils.setParam(this, LINE_SPECIFITION_NUMBER, mEditSpecificationNumber.getText().toString());
             SharedPreferencesUtils.setParam(this, LINE_NOTE, mEditAttributeNote.getText().toString());
-        }
+        }*/
 
             List<MapLineItemEntity> lineItemEntityList = new ArrayList<>();
 
@@ -203,9 +197,9 @@ public class LineAttributeActivity extends BaseAttributeActivity {
             }
             Log.d("KO", lineItemEntityList.size()+" 7");
 
-            if(MainActivity.flag_change) {
+           /* if(MainActivity.flag_change) {
                 FileUtil.write(this, lineItemEntityList, "test");
-            }
+            }*/
 
         mapObj.setMapLineItemEntityList(lineItemEntityList);
 
@@ -589,7 +583,7 @@ public class LineAttributeActivity extends BaseAttributeActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        MainActivity.flag_change = false;
+        /*MainActivity.flag_change = false;*/
     }
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//

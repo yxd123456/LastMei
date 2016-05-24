@@ -73,8 +73,7 @@
 
         </activity>
 
-        <!-- 地图activity -->
-        <activity android:name=".activity.MainActivity" />
+
         <!-- 地图点位信息编辑activity -->
         <activity android:name=".activity.PointAttributeActivity" />
         <!-- 地图线条信息编辑activity -->
@@ -199,7 +198,7 @@
             android:name="UMENG_CHANNEL"
             android:value="PageDownload" />
 
-        <activity android:name=".activity.base.WebMapActivity">
+        <activity android:name="com.hz.activity.base.WebMapActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

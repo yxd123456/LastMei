@@ -8,7 +8,7 @@
 
   <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v1.0.0-rc.1/leaflet.css" />
   <script src="http://cdn.leafletjs.com/leaflet/v1.0.0-rc.1/leaflet.js"></script>
-
+  <script src="json2.js"></script>
   <style>
     body {
     padding: 0;
@@ -25,6 +25,13 @@
 
 
 <script>
+
+        var collection = {
+            "type": "FeatureCollection",
+            "features": []
+        };
+
+
         function reset(){
           window.control.toast();
           map.panTo([getY(), getX()], {animate:true});
@@ -39,6 +46,64 @@
         function getY(){
           var y = window.control.getY();
           return y;
+        }
+
+        function markKYX_Start(){
+          var mark = L.marker(map.getCenter(), {title:'起点'});
+          mark.addTo(map);
+          mark.on('click', editKYX);
+          var geojson = mark.toGeoJSON();
+          collection.features.push(geojson);
+
+          var point = map.getCenter();
+
+          //var lat = Math.round(point.lat*100)/100;
+         // var lng = Math.round(point.lng*100)/100
+
+          var lat = point.lat;
+          var lng = point.lng;
+
+          window.control.writePoint(lat+"", "sPLat");
+          window.control.writePoint(lng+"", "sPLong");
+
+        }
+
+        function markKYX_End(){
+          var mark = L.marker(map.getCenter(), {title:'起点'});
+          mark.addTo(map)
+          mark.on('click', editKYX);
+          var geojson = mark.toGeoJSON();
+          collection.features.push(geojson);
+
+
+          var point = map.getCenter();
+
+          //var lat = Math.round(point.lat*100)/100;
+          //var lng = Math.round(point.lng*100)/100
+          var lat = point.lat;
+          var lng = point.lng;
+
+          window.control.writePoint(lat+"", "ePLat");
+          window.control.writePoint(lng+"", "ePLong");
+
+
+        }
+
+
+
+        function test(x1, y1, x2, y2){
+
+          var polyline = L.polyline([L.latLng(x1, y1), L.latLng(x2, y2)], {color: 'blue'}).addTo(map);
+          map.fitBounds(polyline.getBounds());
+          polyline.on('click', editKYX);
+
+          collection.features.push(polyline.toGeoJSON());
+          window.control.log(JSON.stringify(collection)+"  dudu");
+          window.control.saveGeoJson(JSON.stringify(collection));
+        }
+
+        function editKYX(){
+          window.control.editKuaYueLine();
         }
 
         var x = getX();
@@ -61,6 +126,34 @@
 			zoom: 14,
 			layers: [grayscale]
 		});
+
+        /*
+        获取地理JSON数据,给地图添加覆盖物
+        */
+		var restoreLayer = function(){
+		  var str = window.control.getGeoJson();
+		  window.control.log(str);
+          var jsonObj = JSON.parse(str);
+          window.control.log(jsonObj.type);
+          var features = jsonObj.features;
+          window.control.log(features.length);
+          for(x in features){
+            window.control.log(features[x].geometry.type+"<br>");
+            if(features[x].geometry.type=="Point"){
+              window.control.log(features[x].geometry.coordinates[0]);
+              var arr = features[x].geometry.coordinates;
+              var mark = L.marker([arr[1], arr[0]]).addTo(map);
+              mark.on('click', editKYX);
+            } else if(features[x].geometry.type=="LineString"){
+              var arr1 = features[x].geometry.coordinates;
+
+              var polyline = L.polyline([ [arr1[0][1],arr1[0][0]], [arr1[1][1],arr1[1][0]] ], {color: 'red'}).addTo(map);
+            }
+          }
+		}
+
+        restoreLayer();
+
 
 		var baseLayers = {
 			"Grayscale": grayscale,
@@ -90,7 +183,7 @@
                 .openOn(map);//设置作用的地图
     }
 
-    map.on('click', onMapClick);//设置点击事件
+    //map.on('click', onMapClick);//设置点击事件
 
 </script>
 </body>
