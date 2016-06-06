@@ -1,12 +1,10 @@
 package com.hz.activity.base;
 
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
-import android.app.Dialog;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.LabeledIntent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -15,6 +13,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -31,23 +30,20 @@ import android.widget.Toast;
 
 import com.hz.MainApplication;
 import com.hz.R;
-import com.hz.activity.LineAttributeActivity;
+import com.hz.activity.CrossingLineActivity;
+import com.hz.activity.KuaYueXian;
+import com.hz.activity.MainActivity;
+import com.hz.activity.MyList;
 import com.hz.adapter.CommonAdapter;
 import com.hz.adapter.GalleryAdapter;
 import com.hz.adapter.ViewHolder;
-import com.hz.common.Constans;
-import com.hz.fragment.ProjectListFragment;
-import com.hz.greendao.dao.MapLineEntity;
-import com.hz.greendao.dao.ProjectEntity;
-import com.hz.helper.DataBaseManagerHelper;
-import com.hz.helper.SharedPreferencesHelper;
 import com.hz.util.BitmapCompressUtils;
 import com.hz.util.LocationUtils;
 import com.hz.util.SharedPreferencesUtils;
-import com.hz.util.okhttp_extend.FileUtil;
-import com.hz.view.DialogUtils;
 import com.hz.view.KuaYueLine;
 import com.lidroid.xutils.DbUtils;
+import com.lidroid.xutils.db.sqlite.Selector;
+import com.lidroid.xutils.db.sqlite.WhereBuilder;
 import com.lidroid.xutils.exception.DbException;
 
 import org.apache.cordova.CordovaActivity;
@@ -55,16 +51,16 @@ import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CordovaWebViewImpl;
 import org.apache.cordova.engine.SystemWebView;
 import org.apache.cordova.engine.SystemWebViewEngine;
-
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WebMapActivity extends CordovaActivity {
 
+    private static final int CAPTURE_PHOTO = 1;
+    private static final int COLUMN_PHOTO = 2;
     private SystemWebView webView;
 
     private double[] location;
@@ -72,7 +68,7 @@ public class WebMapActivity extends CordovaActivity {
     private LocationUtils locationUtils;
     private ImageView iv_center;
 
-    private RadioGroup kuaYueXian;
+    private RadioGroup rg_kuaYueXian;
     private AlertDialog dialog_photo;
     private Uri imageUri;
 
@@ -81,48 +77,35 @@ public class WebMapActivity extends CordovaActivity {
     private EditText et_height_kyx;
     private EditText et_comment_kyx;
     protected AlertDialog dialog;
+    private View layout_kyx;
+
+    private GridView gridView;
+    private String kyxTag;
+    private StringBuilder builder1;
+    private Bitmap bitmapSelect;
+    private String x1;
+    private String y1;
+    private String x2;
+    private String y2;
+    private AlertDialog.Builder builderKYX;
     protected Handler handler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what){
-                case 0x123:
-                    if(dialog == null){
-                        dialog = DialogUtils.getDialog(WebMapActivity.this, "跨越线", R.layout.kyx_edit, new DialogUtils.DoBuilderListener() {
-                            @Override
-                            public void doSomething(AlertDialog.Builder builder) {
-                                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        String x1 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "sPLat", "");
-                                        String y1 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "sPLong", "");
-                                        String x2 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "ePLat", "");
-                                        String y2 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "ePLong", "");
-                                        webView.loadUrl("javascript:test('" + x1 +"','" + y1 +"','" + x2 +"','" + y2 +"')");
-                                        kuaYueXian.setVisibility(View.INVISIBLE);
-                                        ((RadioButton)kuaYueXian.getChildAt(2)).setChecked(false);
-                                        ((RadioButton)kuaYueXian.getChildAt(1)).setClickable(true);
-                                        iv_center.setVisibility(View.INVISIBLE);
-                                        KuaYueLine kuaYueLine = new KuaYueLine();
-                                        kuaYueLine.setType(et_type_kyx.getText().toString());
-                                        kuaYueLine.setComment(et_comment_kyx.getText().toString());
-                                        kuaYueLine.setHeight(et_height_kyx.getText().toString());
-                                        kuaYueLine.setList(GalleryAdapter.list);
-                                        try {
-                                            dbUtils.save(kuaYueLine);
-                                        } catch (DbException e) {
-                                            e.printStackTrace();
-                                        }
-                                    }
-                                });
-                            }
-                        });
-
-                    }
-                    dialog.show();
-                    break;
-            }
+            handle(msg);
         }
     };
+    public static final String GEO_JSON = "geo_json";
+    private Context context;
+    private JsInteration jsInteration;
+    public   KuaYueXian kuaYueXian;
+
+    /**
+     * the crossing-line's list
+     */
+    private MyList list_kyx = new MyList();
+
+    private CommonAdapter cross_line_adapter;
+
 
 
     @Override
@@ -131,18 +114,21 @@ public class WebMapActivity extends CordovaActivity {
         setContentView(R.layout.activity_web_map);
         super.init();
         doInit();
-        locationUtils = new LocationUtils(this);
 
+        locationUtils = new LocationUtils(this);
 
         webView.addJavascriptInterface(new JsInteration(), "control");
         loadUrl("file:///android_asset/index.html");
+
     }
 
-    private void doInit() {
-        iv_center = (ImageView) findViewById(R.id.iv_center);
-        kuaYueXian = (RadioGroup) findViewById(R.id.rg_kuayuexian);
-        dbUtils = ((MainApplication)getApplication()).getDbUtils();
+    public void editKYX(View v){
+        Intent intent = new Intent(WebMapActivity.this, CrossingLineActivity.class);
+        intent.putExtra(CrossingLineActivity.CROSSING_LINE, (Parcelable) list_kyx);
+        context.startActivity(intent);
     }
+
+
 
     @Override
     protected CordovaWebView makeWebView() {
@@ -161,9 +147,148 @@ public class WebMapActivity extends CordovaActivity {
         appView.getView().requestFocusFromTouch();
     }
 
+    
+    /*
+    重新定位
+     */
+    public void resetLocation(View v){
+        webView.loadUrl("javascript:reset()");
+    }
+
+    private void handle(Message msg) {
+        switch (msg.what){
+            case 0x123:
+                if(dialog == null){
+                    return;
+                }
+                KuaYueLine kuaYueLine = null;
+                Log.d("last", "取得的TAG是"+kyxTag);
+                try {
+                    kuaYueLine = dbUtils.findFirst(KuaYueLine.class, WhereBuilder.b("tag1", "=",
+                            kyxTag.substring(kyxTag.length()-5, kyxTag.length()-1)));
+                    Log.d("weixin", "2  "+(kuaYueLine == null));
+                    if(kuaYueLine == null){
+                        kuaYueLine = dbUtils.findFirst(KuaYueLine.class, WhereBuilder.b("tag2", "=",
+                                kyxTag.substring(kyxTag.length()-5, kyxTag.length()-1)));
+                        Log.d("weixin", "3  "+(kuaYueLine == null));
+                    }
+                } catch (DbException e) {
+                    e.printStackTrace();
+                    Log.d("weixin", "err"+e.getMessage());
+                }
+                dialog.show();
+                break;
+        }
+    }
+
+    //+++++跨越线++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    /**
+     * 绘制跨越线
+     */
+    public void drawKYX(View v){
+        iv_center.setVisibility(View.VISIBLE);
+        rg_kuaYueXian.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * 设置跨越线起点
+     * @param v
+     */
+    public void startKYX_Point(View v){
+        webView.loadUrl("javascript:markKYX_Start()");
+        v.setClickable(false);
+    }
+
+    /**
+     * 设置跨越线结点
+     * @param v
+     */
+    public void endKYX_Point(View v){
+        webView.loadUrl("javascript:markKYX_End()");
+        dialog.show();
+    }
+
+
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        dialog_photo.dismiss();
+        if(resultCode != RESULT_OK){
+            return;
+        }
+        if (requestCode == CAPTURE_PHOTO) {//拍照获取到图片
+            if(imageUri != null){
+                bitmapSelect = BitmapCompressUtils.decodeUriAsBitmap(this, imageUri);
+            }
+        } else if (requestCode == COLUMN_PHOTO ) {//相册中获取图片
+            Uri uri = data.getData();
+            if(uri == null){
+               return;
+            }else{
+                ContentResolver cr = this.getContentResolver();
+                try {
+                    bitmapSelect = BitmapFactory.decodeStream(cr.openInputStream(uri));
+                } catch (FileNotFoundException e) {
+                    Log.e("Exception", e.getMessage(),e);
+                }
+            }
+        }
+        if(bitmapSelect != null){//将图片流解析为bitmap后加入集合并刷新数据
+            GalleryAdapter.list.add(bitmapSelect);
+            GalleryAdapter.get().notifyDataSetChanged();
+        }
+    }
+    
+    /*
+    提供给JS调用的方法
+     */
     private class JsInteration {
 
-        private static final String GEO_JSON = "geo_json";
+
+
+        /*public KuaYueXian getKuaYueXian() {
+            return kuaYueXian;
+        }
+
+        public void setKuaYueXian(KuaYueXian kuaYueXian) {
+            this.kuaYueXian = kuaYueXian;
+        }*/
+
+        @JavascriptInterface
+        public void getListInformation(){
+            Log.d("kut", "执行了"+list_kyx.size());
+
+        }
+
+        @JavascriptInterface
+        public void goTOCLA(){
+            Intent intent = new Intent(WebMapActivity.this, CrossingLineActivity.class);
+            intent.putExtra(CrossingLineActivity.CROSSING_LINE, (Serializable) list_kyx);
+            context.startActivity(intent);
+        }
+
+        /**
+         * get the crossing-line's latlng and create it,
+         * then add it to the list, so as to provide data for the adapter.
+         * @param lat1
+         * @param lng1
+         * @param lat2
+         * @param lng2
+         */
+        @JavascriptInterface
+        public void addKYX(String lat1, String lng1, String lat2, String lng2){
+            KuaYueXian kuaYueXian1 = new KuaYueXian(lat1, lng1, lat2, lng2);
+            list_kyx.add(kuaYueXian1);
+        }
+
+        @JavascriptInterface
+        public void addKYXAddData(String lat1, String lng1, String lat2, String lng2){
+            Log.d("restoration", lat1+"\n"+lng1+"\n"+lat2+"\n"+lng2);
+
+            kuaYueXian = new KuaYueXian(lat1, lng1, lat2, lng2);
+        }
 
         @JavascriptInterface
         public double getX(){
@@ -199,9 +324,18 @@ public class WebMapActivity extends CordovaActivity {
         }
 
         @JavascriptInterface
+        public void logd(String tag, String str){
+            Log.d(tag, "from js: "+str);
+        }
+
+        /**
+         * 将marker的坐标信息保存到数据库
+         * @param x
+         * @param key
+         */
+        @JavascriptInterface
         public void writePoint(String x, String key){
             SharedPreferencesUtils.setParam(WebMapActivity.this, key, x);
-
         }
 
         @JavascriptInterface
@@ -215,62 +349,105 @@ public class WebMapActivity extends CordovaActivity {
             return geoJson;
         }
 
+        /**
+         * 编辑跨越线
+         * @param tag marker的纬度，用于请求数据库获取数据
+         */
         @JavascriptInterface
-        public void editKuaYueLine(){
-           /* AlertDialog.Builder builder = new AlertDialog.Builder(WebMapActivity.this);
-            builder.setTitle("跨越线");
-            View layout = LayoutInflater.from(WebMapActivity.this).inflate(R.layout.kyx_edit, null);
-            builder.setView(layout);
-            builder.show();*/
+        public void editKuaYueLine(String tag){
+            kyxTag = tag;
             handler.sendEmptyMessage(0x123);
         }
     }
 
-    public void resetLocation(View v){
-        webView.loadUrl("javascript:reset()");
+    private void doInit() {
+        context = this;
+        initView();
+        initData();
+        initListener();
     }
 
-    public void A(View v){
-        iv_center.setVisibility(View.VISIBLE);
-        webView.loadUrl("");
+    private void initView() {
+        iv_center = (ImageView) findViewById(R.id.iv_center);
+        rg_kuaYueXian = (RadioGroup) findViewById(R.id.rg_kuayuexian);
     }
 
-    //+++++跨越线++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-
-    /**
-     * 绘制跨越线
-     */
-    public void E(View v){
-        iv_center.setVisibility(View.VISIBLE);
-        kuaYueXian.setVisibility(View.VISIBLE);
+    private void initData(){
+        dbUtils = ((MainApplication)getApplication()).getDbUtils();
+        doKYX_Data();//初始化跨越县数据
     }
 
-    /**
-     * 设置跨越线起点
-     * @param v
-     */
-    public void sP(View v){
-        webView.loadUrl("javascript:markKYX_Start()");
-        v.setClickable(false);
-    }
-
-    /**
-     * 设置跨越线结点
-     * @param v
-     */
-    public void eP(View v){
-        webView.loadUrl("javascript:markKYX_End()");
-
-        View view = DialogUtils.getView();
-        assert view != null;
-        GridView gridView = (GridView) view.findViewById(R.id.gallery);
-        et_type_kyx = (EditText) view.findViewById(R.id.kyx_type);
-        et_height_kyx = (EditText) view.findViewById(R.id.kyx_type);
-        et_comment_kyx = (EditText)view.findViewById(R.id.et_line_comment_kyx);
-
+    private void doKYX_Data() {
+         /*
+        获取保存的开始点和结束点的位置信息
+         */
+        /*
+        设置跨越线对话框的Builder
+         */
+        builderKYX = new AlertDialog.Builder(WebMapActivity.this);
+        builderKYX.setTitle("跨越线");
+        layout_kyx = LayoutInflater.from(WebMapActivity.this).inflate(R.layout.kyx_edit, null);
+        builderKYX.setView(layout_kyx);
+        gridView = (GridView) layout_kyx.findViewById(R.id.gallery);
+        et_type_kyx = (EditText) layout_kyx.findViewById(R.id.kyx_type);
+        et_height_kyx = (EditText) layout_kyx.findViewById(R.id.kyx_type);
+        et_comment_kyx = (EditText)layout_kyx.findViewById(R.id.et_line_comment_kyx);
         CommonAdapter commonAdapter = GalleryAdapter.getAdapter(this);
         gridView.setAdapter(commonAdapter);
-        dialog.show();
+    }
+
+    private void initListener(){
+        doKYX_Listener();//初始化跨越线监听器
+    }
+
+    /**
+     * 确定跨越线
+     */
+    private void doKYX_Listener() {
+        builderKYX.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            public String newX2;
+            public String newX1;
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                x1 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "sPLat", "");
+                y1 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "sPLong", "");
+                x2 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "ePLat", "");
+                y2 = (String) SharedPreferencesUtils.getParam(WebMapActivity.this, "ePLong", "");
+                Log.d("pdd", "&*("+x1+"   "+x2);
+
+                if(!x1.equals("")&&!y1.equals("")&&!x2.equals("")&&!y2.equals("")) {
+                    Log.d("pdd", x1+"+++++++++++++++++++++++++++++++++++++++++++++++++"+x2);
+                    webView.loadUrl("javascript:test('" + x1 + "','" + y1 + "','" + x2 + "','" + y2 + "')");
+
+                    kuaYueXian.setLineType(et_type_kyx.getText().toString());
+                    kuaYueXian.setLineComment(et_comment_kyx.getText().toString());
+                    kuaYueXian.setLineHeight(et_height_kyx.getText().toString());
+                    kuaYueXian.setBitmaps(GalleryAdapter.list);
+                    list_kyx.add(kuaYueXian);
+
+                    try {
+                        Toast.makeText(WebMapActivity.this, "空值预判" + (kuaYueXian == null), Toast.LENGTH_SHORT).show();
+                        dbUtils.save(kuaYueXian);
+                        Log.d("restoration", "后来呀"+kuaYueXian.getLat1()+" "+kuaYueXian.getLng1());
+                        List<KuaYueXian> list = dbUtils.findAll(Selector.from(KuaYueXian.class));
+                        for (int i = 0; i < list.size(); i++) {
+                            Log.e("restoration", list.size()+"唉"+list.get(i).getLat1());
+                        }
+                    } catch (DbException e) {
+                        e.printStackTrace();
+                        Toast.makeText(WebMapActivity.this, "发生了异常"+e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+                rg_kuaYueXian.setVisibility(View.INVISIBLE);
+                ((RadioButton)rg_kuaYueXian.getChildAt(2)).setChecked(false);
+                ((RadioButton)rg_kuaYueXian.getChildAt(1)).setClickable(true);
+                iv_center.setVisibility(View.INVISIBLE);
+
+
+            }
+        });
+        dialog = builderKYX.create();
 
         et_type_kyx.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -308,8 +485,12 @@ public class WebMapActivity extends CordovaActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 if(position == 0){
-                    dialog_photo = DialogUtils.getDialogNoButton(WebMapActivity.this, "选择获取方式", R.layout.select_photo);
-                    View  select_view = DialogUtils.getView();
+                    AlertDialog.Builder builder = new AlertDialog.Builder(WebMapActivity.this);
+                    builder.setTitle("选择获取方式");
+                    View layout = LayoutInflater.from(WebMapActivity.this).inflate(R.layout.select_photo, null);
+                    builder.setView(layout);
+                    dialog_photo = builder.create();
+                    View  select_view = layout;
                     TextView tv1 = (TextView) select_view.findViewById(R.id.method1);
                     TextView tv2 = (TextView) select_view.findViewById(R.id.method2);
                     tv1.setOnClickListener(new View.OnClickListener() {
@@ -340,47 +521,7 @@ public class WebMapActivity extends CordovaActivity {
                 }
             }
         });
-
     }
-
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        dialog_photo.dismiss();
-        if(resultCode != RESULT_OK){
-            return;
-        }
-        if (requestCode == 1) {
-            //to do find the path of pic
-            if(imageUri != null){
-                Bitmap bitmap = BitmapCompressUtils.decodeUriAsBitmap(this, imageUri);
-                if(bitmap != null){
-                    GalleryAdapter.list.add(bitmap);
-                    GalleryAdapter.get().notifyDataSetChanged();
-                }
-
-            }
-        } else if (requestCode == 2 ) {
-            Uri uri = data.getData();
-            if(uri == null){
-               return;
-            }else{
-                ContentResolver cr = this.getContentResolver();
-                try {
-                    Bitmap bitmap = BitmapFactory.decodeStream(cr.openInputStream(uri));
-                    if(bitmap != null){
-                        GalleryAdapter.list.add(bitmap);
-                        GalleryAdapter.get().notifyDataSetChanged();
-                    }
-                } catch (FileNotFoundException e) {
-                    Log.e("Exception", e.getMessage(),e);
-                }
-            }
-        }
-    }
-
-
 
 
 }
