@@ -23,146 +23,130 @@
 <div id="map"></div>
 
 
-
 <script>
 
+         /*
+        标签的标记
+        */
+        var tag;
+
+        /*
+        x坐标
+        */
+        var x = getX();
+
+        /*
+        y坐标
+        */
+        var y = getY();
+
+         /*
+        用于存放地理覆盖物json数据
+        */
         var collection = {
             "type": "FeatureCollection",
             "features": []
         };
 
+        var polylines = [];
 
-        function reset(){
-          window.control.toast();
-          map.panTo([getY(), getX()], {animate:true});
-        }
+         /*
+        用于存放立杆覆盖物的json数据
+        */
+        var collection_ligan = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
+        /*
+        用于存放变压箱覆盖物的json数据
+        */
+        var collection_bianyaxiang = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
-        function getX(){
-          var x = window.control.getX();
-          return x;
-        }
+         /*
+        用于存放户表覆盖物的json数据
+        */
+        var collection_hubiao = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
-        function getY(){
-          var y = window.control.getY();
-          return y;
-        }
+         /*
+        用于存放电缆井覆盖物的json数据
+        */
+        var collection_dianlanjing = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
-        function markKYX_Start(){
-          var mark = L.marker(map.getCenter(), {title:'起点'});
-          mark.addTo(map);
-          mark.on('click', editKYX);
-          var geojson = mark.toGeoJSON();
-          collection.features.push(geojson);
+         /*
+        用于存放箱式开关站覆盖物的json数据
+        */
+        var collection_kaiguanzhan = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
-          var point = map.getCenter();
+         /*
+        用于存放开闭所覆盖物的json数据
+        */
+        var collection_kaibisuo = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
-          //var lat = Math.round(point.lat*100)/100;
-         // var lng = Math.round(point.lng*100)/100
+         /*
+        用于存放变压站覆盖物的json数据
+        */
+        var collection_bianyazhan = {
+            "type": "FeatureCollection",
+            "features": []
+        };
 
-          var lat = point.lat;
-          var lng = point.lng;
+        var polyline;
 
-          window.control.writePoint(lat+"", "sPLat");
-          window.control.writePoint(lng+"", "sPLong");
-
-        }
-
-        function markKYX_End(){
-          var mark = L.marker(map.getCenter(), {title:'起点'});
-          mark.addTo(map)
-          mark.on('click', editKYX);
-          var geojson = mark.toGeoJSON();
-          collection.features.push(geojson);
-
-
-          var point = map.getCenter();
-
-          //var lat = Math.round(point.lat*100)/100;
-          //var lng = Math.round(point.lng*100)/100
-          var lat = point.lat;
-          var lng = point.lng;
-
-          window.control.writePoint(lat+"", "ePLat");
-          window.control.writePoint(lng+"", "ePLong");
-
-
-        }
-
-
-
-        function test(x1, y1, x2, y2){
-
-          var polyline = L.polyline([L.latLng(x1, y1), L.latLng(x2, y2)], {color: 'blue'}).addTo(map);
-          map.fitBounds(polyline.getBounds());
-          polyline.on('click', editKYX);
-
-          collection.features.push(polyline.toGeoJSON());
-          window.control.log(JSON.stringify(collection)+"  dudu");
-          window.control.saveGeoJson(JSON.stringify(collection));
-        }
-
-        function editKYX(){
-          window.control.editKuaYueLine();
-        }
-
-        var x = getX();
-        var y = getY();
-
-
-
-
+        /*
+        地图属性和url
+        */
         var mbAttr = 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
 				'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
 				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
 			mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw';
 
+        /*
+        灰度图和街道图
+        */
         var grayscale   = L.tileLayer(mbUrl, {id: 'mapbox.light', attribution: mbAttr}),
 		    streets  = L.tileLayer(mbUrl, {id: 'mapbox.streets',   attribution: mbAttr});
 
-
+        /*
+        地图
+        */
         var map = L.map('map', {
-			center: [y, x],
-			zoom: 14,
-			layers: [grayscale]
+			center: [y, x],//将获取到的坐标信息输入以定位
+			zoom: 14,//缩放程度
+			layers: [grayscale]//使用灰度图层
 		});
 
         /*
-        获取地理JSON数据,给地图添加覆盖物
+        基本图层
         */
-		var restoreLayer = function(){
-		  var str = window.control.getGeoJson();
-		  window.control.log(str);
-          var jsonObj = JSON.parse(str);
-          window.control.log(jsonObj.type);
-          var features = jsonObj.features;
-          window.control.log(features.length);
-          for(x in features){
-            window.control.log(features[x].geometry.type+"<br>");
-            if(features[x].geometry.type=="Point"){
-              window.control.log(features[x].geometry.coordinates[0]);
-              var arr = features[x].geometry.coordinates;
-              var mark = L.marker([arr[1], arr[0]]).addTo(map);
-              mark.on('click', editKYX);
-            } else if(features[x].geometry.type=="LineString"){
-              var arr1 = features[x].geometry.coordinates;
-
-              var polyline = L.polyline([ [arr1[0][1],arr1[0][0]], [arr1[1][1],arr1[1][0]] ], {color: 'red'}).addTo(map);
-            }
-          }
-		}
-
-        restoreLayer();
-
-
 		var baseLayers = {
 			"Grayscale": grayscale,
 			"Streets": streets
 		};
 
+        /*
+        地图控制图层切换
+        */
 		L.control.layers(baseLayers).addTo(map);
 
-
+        /*
+        地图底部标注
+        */
 		L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpandmbXliNDBjZWd2M2x6bDk3c2ZtOTkifQ._QA7i5Mpkd_m30IGElHziw', {
 			maxZoom: 18,
 			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
@@ -172,18 +156,1114 @@
 		}).addTo(map);
 
 
+        /*创建一个弹窗对象*/
+        var popup = L.popup();
 
-		/*创建一个弹窗对象*/
-    var popup = L.popup();
+        function onMapClick(e) {//地图点击监听
+            popup
+                    .setLatLng(e.latlng)//设置当前点击的坐标
+                    .setContent("你点击的坐标点是" + e.latlng.toString())//设置当前坐标的信息
+                    .openOn(map);//设置作用的地图
+        }
 
-    function onMapClick(e) {//地图点击监听
-        popup
-                .setLatLng(e.latlng)//设置当前点击的坐标
-                .setContent("你点击的坐标点是" + e.latlng.toString())//设置当前坐标的信息
-                .openOn(map);//设置作用的地图
-    }
+        //map.on('click', onMapClick);//设置点击事件
 
-    //map.on('click', onMapClick);//设置点击事件
+        initKYX();
+
+        liGan();
+         bianYaXiang();
+          huBiao();
+          dianLanJing();
+          xiangShiKaiGuanZhan();
+          kaiBiSuo();
+          xiangShiBianYaZhan();
+
+          function xiangShiBianYaZhan(){
+            var jsonStr = window.control.getGeoJson("bian_ya_zhan");
+          if(jsonStr == "nullllllllll"){
+            return;
+          }
+          var jsonObj = JSON.parse(jsonStr);
+          var features = jsonObj.features;
+          for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                 var newIcon7 = L.icon({
+                  iconUrl: 'kaiguanzhan.png',
+                  iconRetinaUrl: 'kaiguanzhan.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'kaiguanzhan.png',
+                  shadowRetinaUrl: 'kaiguanzhan.png',
+                  shadowSize: [60, 20],
+                   });
+                  var id = features[x].properties.title;
+                var mark = L.marker([arr[1], arr[0]],  {icon:newIcon7}).addTo(map).on('click', function(){
+
+                           var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(7, id);
+                              }else{
+                                   var selectedIcon7 = L.icon({
+                                    iconUrl: 'byz.png',
+                                    iconRetinaUrl: 'byz.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'byz.png',
+                                    shadowRetinaUrl: 'byz.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon7);
+                                 polylines.push(this.getLatLng());
+
+                                  var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                 });
+               }
+             }
+          }
+
+          function kaiBiSuo(){
+             var jsonStr = window.control.getGeoJson("kai_bi_suo");
+          if(jsonStr == "nullllllllll"){
+            return;
+          }
+          var jsonObj = JSON.parse(jsonStr);
+          var features = jsonObj.features;
+          for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                 var newIcon6 = L.icon({
+                  iconUrl: 'kaiguanzhan.png',
+                  iconRetinaUrl: 'kaiguanzhan.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'kaiguanzhan.png',
+                  shadowRetinaUrl: 'kaiguanzhan.png',
+                  shadowSize: [60, 20],
+                   });
+                  var id = features[x].properties.title;
+                var mark = L.marker([arr[1], arr[0]],  {icon:newIcon6}).addTo(map).on('click', function(){
+                 var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(6, id);
+                              }else{
+                                   var selectedIcon6 = L.icon({
+                                    iconUrl: 'kbs.png',
+                                    iconRetinaUrl: 'kbs.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'kbs.png',
+                                    shadowRetinaUrl: 'kbs.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon6);
+                                 polylines.push(this.getLatLng());
+                                   var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                 });
+               }
+             }
+          }
+
+          function xiangShiKaiGuanZhan(){
+             var jsonStr = window.control.getGeoJson("kai_guan_zhan");
+          if(jsonStr == "nullllllllll"){
+            return;
+          }
+          var jsonObj = JSON.parse(jsonStr);
+          var features = jsonObj.features;
+          for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                 var newIcon5 = L.icon({
+                  iconUrl: 'kaiguanzhan.png',
+                  iconRetinaUrl: 'kaiguanzhan.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'kaiguanzhan.png',
+                  shadowRetinaUrl: 'kaiguanzhan.png',
+                  shadowSize: [60, 20],
+                   });
+                  var id = features[x].properties.title;
+                var mark = L.marker([arr[1], arr[0]],  {icon:newIcon5}).addTo(map).on('click', function(){
+                 var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(5, id);
+                              }else{
+                                   var selectedIcon5 = L.icon({
+                                    iconUrl: 'kgz.png',
+                                    iconRetinaUrl: 'kgz.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'kgz.png',
+                                    shadowRetinaUrl: 'kgz.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon5);
+                                 polylines.push(this.getLatLng());
+                                   var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                 });
+               }
+             }
+          }
+
+          function dianLanJing(){
+             var jsonStr = window.control.getGeoJson("dian_lan_jing");
+          if(jsonStr == "nullllllllll"){
+            return;
+          }
+          var jsonObj = JSON.parse(jsonStr);
+          var features = jsonObj.features;
+          for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                 var newIcon4 = L.icon({
+                  iconUrl: 'hubiao.png',
+                  iconRetinaUrl: 'hubiao.png',
+                  iconSize: [40, 20],
+                  shadowUrl: 'hubiao.png',
+                  shadowRetinaUrl: 'hubiao.png',
+                  shadowSize: [40, 20],
+                });
+                  var id = features[x].properties.title;
+                var mark = L.marker([arr[1], arr[0]],  {icon:newIcon4}).addTo(map).on('click', function(){
+                 var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(4, id);
+                              }else{
+                                   var selectedIcon4 = L.icon({
+                                    iconUrl: 'dlj.png',
+                                    iconRetinaUrl: 'dlj.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'dlj.png',
+                                    shadowRetinaUrl: 'dlj.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon4);
+                                 polylines.push(this.getLatLng());
+                                   var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                 });
+               }
+             }
+          }
+
+          function huBiao(){
+             var jsonStr = window.control.getGeoJson("hu_biao");
+          if(jsonStr == "nullllllllll"){
+            return;
+          }
+          var jsonObj = JSON.parse(jsonStr);
+          var features = jsonObj.features;
+          for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                var newIcon3 = L.icon({
+                  iconUrl: 'hubiao.png',
+                  iconRetinaUrl: 'hubiao.png',
+                  iconSize: [40, 20],
+                  shadowUrl: 'hubiao.png',
+                  shadowRetinaUrl: 'hubiao.png',
+                  shadowSize: [40, 20],
+                });
+                  var id = features[x].properties.title;
+                var mark = L.marker([arr[1], arr[0]],  {icon:newIcon3}).addTo(map).on('click', function(){
+                  var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(3, id);
+                              }else{
+                                   var selectedIcon3 = L.icon({
+                                    iconUrl: 'hb.png',
+                                    iconRetinaUrl: 'hb.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'hb.png',
+                                    shadowRetinaUrl: 'hb.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon3);
+                                 polylines.push(this.getLatLng());
+                                   var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                 });
+               }
+             }
+          }
+
+
+
+           function bianYaXiang(){
+          var jsonStr = window.control.getGeoJson("bian_ya_xiang");//获取到关于变压箱的JSON字符串
+          window.control.logd("tag12", "得到的字符串为"+jsonStr);
+          if(jsonStr == "nullllllllll"){
+            return;
+          }
+          var jsonObj = JSON.parse(jsonStr);//转换为JSON对象
+          var features = jsonObj.features;
+          for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                var newIcon2 = L.icon({
+                  iconUrl: 'bianyaxiang.png',
+                  iconRetinaUrl: 'bianyaxiang.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'bianyaxiang.png',
+                  shadowRetinaUrl: 'bianyaxiang.png',
+                  shadowSize: [60, 20],
+                });
+                var id = features[x].properties.title;
+                var mark = L.marker([arr[1], arr[0]],  {icon:newIcon2}).addTo(map).on('click', function(){
+                             var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(2, id);
+                              }else{
+                                   var selectedIcon2 = L.icon({
+                                    iconUrl: 'byx.png',
+                                    iconRetinaUrl: 'byx.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'byx.png',
+                                    shadowRetinaUrl: 'byx.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon2);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                 });
+               }
+             }
+          }
+
+           connectLine();
+
+         function addJsonString(str1, str2){
+            alert("lala"+str1);
+            window.control.logd("tag10", str1);
+             window.control.logd("tag10", str2);
+           /* var arr1 = JSON.parse(str1);
+            var arr2 = JSON.parse(str2);
+            arr1 = arr1.concat(arr2);
+            var data = JSON.stringify(arr1);
+            window.control.saveLastPolylinesData(data);
+           window.control.logd("tag10", data);*/
+          }
+
+          function one(id, points){
+              this.id = id;
+              this.points = points;
+          }
+
+          function connectLine(){
+            var str1 = window.control.getPolylinesConnectData();//获取线段连接的数据
+            var arr = JSON.parse(str1);//将数据转换为JSON数组
+            for(x in arr){
+                var str = JSON.stringify(arr[x]);//将某个点的数据转换为字符串
+                if(str==""){
+                  return;
+                }
+              var polylineArr = JSON.parse(str);//将字符串转换为线段数组
+              var polyline = L.polyline(polylineArr, {color: 'red', weight:12}).addTo(map);
+            }
+          }
+
+        function liGan(){
+          var jsonStr = window.control.getGeoJson("li_gan");
+          if(jsonStr == "nullllllllll"){
+            return;
+          }
+          var jsonObj = JSON.parse(jsonStr);
+          var features = jsonObj.features;
+          for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                var newIcon1 = L.icon({
+                  iconUrl: 'gan.png',
+                  iconRetinaUrl: 'gan.png',
+                  iconSize: [20, 20],
+                  shadowUrl: 'gan.png',
+                  shadowRetinaUrl: 'gan.png',
+                  shadowSize: [20, 20],
+                });
+                var id = features[x].properties.title;
+                var mark = L.marker([arr[1], arr[0]],  {icon:newIcon1}).addTo(map).on('click', function(){
+                      var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(1, id);
+                              }else{
+                                   var selectedIcon1 = L.icon({
+                                    iconUrl: 'lg.png',
+                                    iconRetinaUrl: 'lg.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'lg.png',
+                                    shadowRetinaUrl: 'lg.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon1);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+              }
+          }
+        }
+
+        function deleteLiGan(type, id){
+          if(type == 1){
+           var demo = {
+            "type": "FeatureCollection",
+            "features": []
+            };
+           var jsonStr = window.control.getGeoJson("li_gan");
+           var jsonObj = JSON.parse(jsonStr);
+           var features = jsonObj.features;
+           for(x in features){
+              if(features[x].geometry.type=="Point"){
+                window.control.log(features[x].geometry.coordinates[0]);
+                var title = features[x].properties.title;
+                if(id != title){
+                  demo.features.push(features[x]);
+                }
+              }
+            }
+           var str = JSON.stringify(demo);
+           window.control.saveGeoJson("li_gan", str);
+           window.location.reload();
+          } else if(type == 2){
+            window.control.logd("tag7", "执行了type2删除");
+           var demo2 = {
+            "type": "FeatureCollection",
+            "features": []
+            };
+              var jsonStr = window.control.getGeoJson("bian_ya_xiang");
+           var jsonObj = JSON.parse(jsonStr);
+           var features = jsonObj.features;
+           for(x in features){
+              if(features[x].geometry.type=="Point"){
+                window.control.log(features[x].geometry.coordinates[0]);
+                var title = features[x].properties.title;
+                if(id != title){
+                  demo2.features.push(features[x]);
+                }
+              }
+            }
+           var str = JSON.stringify(demo2);
+           window.control.saveGeoJson("bian_ya_xiang", str);
+            window.control.logd("tag7", "得到的type2GEOJSON是"+str);
+           window.location.reload();
+          }else if(type == 3){
+             var demo3 = {
+            "type": "FeatureCollection",
+            "features": []
+            };
+              var jsonStr = window.control.getGeoJson("hu_biao");
+           var jsonObj = JSON.parse(jsonStr);
+           var features = jsonObj.features;
+           for(x in features){
+              if(features[x].geometry.type=="Point"){
+                window.control.log(features[x].geometry.coordinates[0]);
+                var title = features[x].properties.title;
+                if(id != title){
+                  demo3.features.push(features[x]);
+                }
+              }
+            }
+           var str = JSON.stringify(demo3);
+           window.control.saveGeoJson("hu_biao", str);
+           window.location.reload();
+          }else if(type == 4){
+             var demo4 = {
+            "type": "FeatureCollection",
+            "features": []
+            };
+              var jsonStr = window.control.getGeoJson("dian_lan_jing");
+           var jsonObj = JSON.parse(jsonStr);
+           var features = jsonObj.features;
+           for(x in features){
+              if(features[x].geometry.type=="Point"){
+                window.control.log(features[x].geometry.coordinates[0]);
+                var title = features[x].properties.title;
+                if(id != title){
+                  demo4.features.push(features[x]);
+                }
+              }
+            }
+           var str = JSON.stringify(demo4);
+           window.control.saveGeoJson("dian_lan_jing", str);
+           window.location.reload();
+          }else if(type == 5){
+           var demo5 = {
+            "type": "FeatureCollection",
+            "features": []
+            };
+              var jsonStr = window.control.getGeoJson("kai_guan_zhan");
+           var jsonObj = JSON.parse(jsonStr);
+           var features = jsonObj.features;
+           for(x in features){
+              if(features[x].geometry.type=="Point"){
+                window.control.log(features[x].geometry.coordinates[0]);
+                var title = features[x].properties.title;
+                if(id != title){
+                  demo5.features.push(features[x]);
+                }
+              }
+            }
+           var str = JSON.stringify(demo5);
+           window.control.saveGeoJson("kai_guan_zhan", str);
+           window.location.reload();
+          }else if(type == 6){
+            var demo6 = {
+            "type": "FeatureCollection",
+            "features": []
+            };
+            var jsonStr = window.control.getGeoJson("kai_bi_suo");
+           var jsonObj = JSON.parse(jsonStr);
+           var features = jsonObj.features;
+           for(x in features){
+              if(features[x].geometry.type=="Point"){
+                var title = features[x].properties.title;
+                if(id != title){
+                  demo6.features.push(features[x]);
+                }
+              }
+            }
+           var str = JSON.stringify(demo6);
+           window.control.saveGeoJson("kai_bi_suo", str);
+           window.location.reload();
+          }else if(type == 7){
+           var demo7 = {
+            "type": "FeatureCollection",
+            "features": []
+            };
+              var jsonStr = window.control.getGeoJson("bian_ya_zhan");
+           var jsonObj = JSON.parse(jsonStr);
+           var features = jsonObj.features;
+           for(x in features){
+              if(features[x].geometry.type=="Point"){
+                window.control.log(features[x].geometry.coordinates[0]);
+                var title = features[x].properties.title;
+                if(id != title){
+                  demo7.features.push(features[x]);
+                }
+              }
+            }
+           var str = JSON.stringify(demo7);
+           window.control.saveGeoJson("bian_ya_zhan", str);
+           window.location.reload();
+          }
+        }
+
+        /*
+          清空临时保存所选点（要进行连线）的数组
+        */
+        function clearPolylines(){
+            polylines.splice(0,polylines.length);
+        }
+
+        function addLiGan(type, id){
+          alert(id);
+          if(type == 1){
+             var newIcon1 = L.icon({
+                  iconUrl: 'gan.png',
+                  iconRetinaUrl: 'gan.png',
+                  iconSize: [20, 20],
+                  shadowUrl: 'gan.png',
+                  shadowRetinaUrl: 'gan.png',
+                  shadowSize: [20, 20],
+                });
+                var mark = L.marker(map.getCenter(), {icon:newIcon1});
+                var jsonObj = mark.toGeoJSON();
+                jsonObj.properties.title = id;
+                var oldStr = window.control.getGeoJson("li_gan");
+                if(oldStr != "nullllllllll"){
+                    var oldObj = JSON.parse(oldStr);
+                    var oldFeatures = oldObj.features;
+                    Array.prototype.push.apply(collection_ligan.features, oldFeatures);
+                }
+               collection_ligan.features.push(jsonObj);
+                var str = JSON.stringify(collection_ligan);
+
+                window.control.saveGeoJson("li_gan", str);
+                mark.addTo(map);
+                mark.on('click', function(){
+                     var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(1, id);
+                              }else{
+                                   var selectedIcon1 = L.icon({
+                                    iconUrl: 'lg.png',
+                                    iconRetinaUrl: 'lg.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'lg.png',
+                                    shadowRetinaUrl: 'lg.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon1);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+          } else if(type == 2){//在地图上添加变压箱
+               var newIcon2 = L.icon({//提供标签
+                  iconUrl: 'bianyaxiang.png',
+                  iconRetinaUrl: 'bianyaxiang.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'bianyaxiang.png',
+                  shadowRetinaUrl: 'bianyaxiang.png',
+                  shadowSize: [60, 20],
+                });
+                var mark = L.marker(map.getCenter(), {icon:newIcon2});//利用标签在地图上做标记
+                var jsonObj = mark.toGeoJSON();//将标记信息转换为JSON数据
+                jsonObj.properties.title = id;//将标记属性的title设置为id，以供在数据库中查找
+
+                var oldStr = window.control.getGeoJson("bian_ya_xiang");
+                if(oldStr != "nullllllllll"){
+                    var oldObj = JSON.parse(oldStr);
+                    var oldFeatures = oldObj.features;
+                    Array.prototype.push.apply(collection_bianyaxiang.features, oldFeatures);
+                }
+
+                collection_bianyaxiang.features.push(jsonObj);//将标记加入到数组中
+                var str = JSON.stringify(collection_bianyaxiang);//将数据转换为JSON字符串
+                window.control.saveGeoJson("bian_ya_xiang", str);//将JSON字符串保存到本地
+                window.control.logd("tag12", "保存的字符串为"+str);
+                mark.addTo(map);//将该标签加入到地图中
+                 mark.on('click', function(){
+                  var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(2, id);
+                              }else{
+                                   var selectedIcon2 = L.icon({
+                                    iconUrl: 'byx.png',
+                                    iconRetinaUrl: 'byx.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'byx.png',
+                                    shadowRetinaUrl: 'byx.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon2);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+          }else if(type == 3){
+                 var newIcon3 = L.icon({
+                  iconUrl: 'hubiao.png',
+                  iconRetinaUrl: 'hubiao.png',
+                  iconSize: [40, 20],
+                  shadowUrl: 'hubiao.png',
+                  shadowRetinaUrl: 'hubiao.png',
+                  shadowSize: [40, 20],
+                });
+                var mark = L.marker(map.getCenter(), {icon:newIcon3});
+                var jsonObj = mark.toGeoJSON();
+                jsonObj.properties.title = id;
+
+                 var oldStr = window.control.getGeoJson("hu_biao");
+                if(oldStr != "nullllllllll"){
+                    var oldObj = JSON.parse(oldStr);
+                    var oldFeatures = oldObj.features;
+                    Array.prototype.push.apply(collection_hubiao.features, oldFeatures);
+                }
+
+                collection_hubiao.features.push(jsonObj);
+                var str = JSON.stringify(collection_hubiao);
+                window.control.saveGeoJson("hu_biao", str);
+                mark.addTo(map);
+                 mark.on('click', function(){
+                  var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(3, id);
+                              }else{
+                                   var selectedIcon3 = L.icon({
+                                    iconUrl: 'hb.png',
+                                    iconRetinaUrl: 'hb.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'hb.png',
+                                    shadowRetinaUrl: 'hb.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon3);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+          }else if(type == 4){
+                  var newIcon4 = L.icon({
+                  iconUrl: 'dianlanjing.png',
+                  iconRetinaUrl: 'dianlanjing.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'dianlanjing.png',
+                  shadowRetinaUrl: 'dianlanjing.png',
+                  shadowSize: [60, 20],
+                   });
+                 var mark = L.marker(map.getCenter(), {icon:newIcon4});
+                 var jsonObj = mark.toGeoJSON();
+                jsonObj.properties.title = id;
+
+                   var oldStr = window.control.getGeoJson("dian_lan_jing");
+                if(oldStr != "nullllllllll"){
+                    var oldObj = JSON.parse(oldStr);
+                    var oldFeatures = oldObj.features;
+                    Array.prototype.push.apply(collection_dianlanjing.features, oldFeatures);
+                }
+
+                 collection_dianlanjing.features.push(jsonObj);
+                var str = JSON.stringify(collection_dianlanjing);
+                window.control.saveGeoJson("dian_lan_jing", str);
+                 mark.addTo(map);
+                  mark.on('click', function(){
+                      var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(4, id);
+                              }else{
+                                   var selectedIcon4 = L.icon({
+                                    iconUrl: 'dlj.png',
+                                    iconRetinaUrl: 'dlj.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'dlj.png',
+                                    shadowRetinaUrl: 'dlj.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon4);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+          }else if(type == 5){
+                  var newIcon5 = L.icon({
+                  iconUrl: 'kaiguanzhan.png',
+                  iconRetinaUrl: 'kaiguanzhan.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'kaiguanzhan.png',
+                  shadowRetinaUrl: 'kaiguanzhan.png',
+                  shadowSize: [60, 20],
+                   });
+                  var mark = L.marker(map.getCenter(), {icon:newIcon5});
+                  var jsonObj = mark.toGeoJSON();
+                jsonObj.properties.title = id;
+
+                 var oldStr = window.control.getGeoJson("kai_guan_zhan");
+                if(oldStr != "nullllllllll"){
+                    var oldObj = JSON.parse(oldStr);
+                    var oldFeatures = oldObj.features;
+                    Array.prototype.push.apply(collection_kaiguanzhan.features, oldFeatures);
+                }
+
+                   collection_kaiguanzhan.features.push(jsonObj);
+                var str = JSON.stringify(collection_kaiguanzhan);
+                window.control.saveGeoJson("kai_guan_zhan", str);
+                 mark.addTo(map);
+                  mark.on('click', function(){
+                      var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(5, id);
+                              }else{
+                                   var selectedIcon5 = L.icon({
+                                    iconUrl: 'kgz.png',
+                                    iconRetinaUrl: 'kgz.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'kgz.png',
+                                    shadowRetinaUrl: 'kgz.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon5);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+          }else if(type == 6){
+                  var newIcon6 = L.icon({
+                  iconUrl: 'kaibisuo.png',
+                  iconRetinaUrl: 'kaibisuo.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'kaibisuo.png',
+                  shadowRetinaUrl: 'kaibisuo.png',
+                  shadowSize: [60, 20],
+                   });
+                 var mark = L.marker(map.getCenter(), {icon:newIcon6});
+                   var jsonObj = mark.toGeoJSON();
+                jsonObj.properties.title = id;
+
+                 var oldStr = window.control.getGeoJson("kai_bi_suo");
+                if(oldStr != "nullllllllll"){
+                    var oldObj = JSON.parse(oldStr);
+                    var oldFeatures = oldObj.features;
+                    Array.prototype.push.apply(collection_kaibisuo.features, oldFeatures);
+                }
+
+                 collection_kaibisuo.features.push(jsonObj);
+                var str = JSON.stringify(collection_kaibisuo);
+                window.control.saveGeoJson("kai_bi_suo", str);
+                 mark.addTo(map);
+                  mark.on('click', function(){
+                      var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(6, id);
+                              }else{
+                                   var selectedIcon6 = L.icon({
+                                    iconUrl: 'kbs.png',
+                                    iconRetinaUrl: 'kbs.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'kbs.png',
+                                    shadowRetinaUrl: 'kbs.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon6);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+          }else if(type == 7){
+                  var newIcon7 = L.icon({
+                  iconUrl: 'bianyazhan.png',
+                  iconRetinaUrl: 'bianyazhan.png',
+                  iconSize: [60, 20],
+                  shadowUrl: 'bianyazhan.png',
+                  shadowRetinaUrl: 'bianyazhan.png',
+                  shadowSize: [60, 20],
+                   });
+                 var mark = L.marker(map.getCenter(), {icon:newIcon7});
+                 var jsonObj = mark.toGeoJSON();
+                jsonObj.properties.title = id;
+
+                var oldStr = window.control.getGeoJson("bian_ya_zhan");
+                if(oldStr != "nullllllllll"){
+                    var oldObj = JSON.parse(oldStr);
+                    var oldFeatures = oldObj.features;
+                    Array.prototype.push.apply(collection_bianyazhan.features, oldFeatures);
+                }
+
+                   collection_bianyazhan.features.push(jsonObj);
+                var str = JSON.stringify(collection_bianyazhan);
+                window.control.saveGeoJson("bian_ya_zhan", str);
+                 mark.addTo(map);
+                  mark.on('click', function(){
+                      var flag = window.control.isFlag_connect_line();
+                             if(!flag){
+                                window.control.editLiGan(7, id);
+                              }else{
+                                   var selectedIcon7 = L.icon({
+                                    iconUrl: 'byz.png',
+                                    iconRetinaUrl: 'byz.png',
+                                    iconSize: [60, 20],
+                                    shadowUrl: 'byz.png',
+                                    shadowRetinaUrl: 'byz.png',
+                                    shadowSize: [60, 20],
+                                  });
+                                 this.setIcon(selectedIcon7);
+                                 polylines.push(this.getLatLng());
+                                 var needData = JSON.stringify(polylines);
+                                 window.control.savePolylinesData(needData);
+                              }
+                });
+          }
+        }
+
+        function colorPoint(){
+
+        }
+
+        var str = window.control.getGeoJson();//获取数据库中的地理JSON数据
+
+        var index = 1;
+
+        doJSON(str);
+
+        var collection1 = {
+            "type": "FeatureCollection",
+            "features": [],
+            "id":[]
+        };
+
+        /*
+        传入线段的两个点来删除其JSON数据，包括两个点和两点之间的连线
+        */
+        function deleteJSON(json, lat, lng, lat1, lng1){
+           //alert(json);
+           var jsonObj = JSON.parse(str);
+           var features = jsonObj.features;
+           var needAddPoint = true;
+           var needAddLine = true;
+
+           //window.control.logd("tag3","传进来的是 lat:"+lat+"  lng:"+lng+" lat1:"+lat1+" lng1:"+lng1);
+
+           for(var x=0; x < features.length; x++){
+
+             if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                window.control.logd("tag3","arr的lat是"+arr[1].toFixed(4)+"  arr的lng是"+arr[0].toFixed(3));
+                if(  ((arr[1].toFixed(4)==lat) && (arr[0].toFixed(3)==lng) ) || ((arr[1].toFixed(4)==lat1) && (arr[0].toFixed(3)==lng1)) ){
+                    features.splice(x , 1);
+                }
+            }
+
+             if(features[x].geometry.type=="LineString"){//当类型为线段时
+                var arr1 = features[x].geometry.coordinates;
+                if( ((arr1[0][1].toFixed(4)==lat) && (arr1[0][0].toFixed(3)==lng)) || ((arr1[0][1].toFixed(4)==lat1 ) && (arr1[0][0].toFixed(3)==lng1)) ){
+                    //features.splice(x, 1)
+                }
+             }
+
+
+           }
+
+           var newStr = JSON.stringify(jsonObj);
+
+           window.control.handler(1234, newStr);
+           //alert(newStr);
+           //alert("删除成功！重启后可见");
+           window.control.saveGeoJson(newStr);
+
+           doJSON(newStr);
+           refresh();
+        }
+
+        function refresh()
+        {
+          window.location.reload();
+        }
+
+        function findBinaYaXaing(str){
+          if(str !== "" && str !== undefined && str !== null){
+            collection = JSON.parse(str);//将JSON字符串转换为JSON对象
+            window.control.log(str);//打印出JSON字符串
+             var jsonObj = JSON.parse(str);
+            var features = jsonObj.features;//获取feature对象
+          }
+        }
+
+        function doJSON(str){
+          if(str !== "" && str !== undefined && str !== null){
+            collection = JSON.parse(str);//将JSON字符串转换为JSON对象
+            window.control.log(str);//打印出JSON字符串
+            var jsonObj = JSON.parse(str);
+            var features = jsonObj.features;//获取feature对象
+
+            for(var x=0; x < features.length; x++){//对feature对象进行遍历
+              if(features[x].geometry.type=="Point"){//当类型为点时
+                var arr = features[x].geometry.coordinates;
+                var mark = L.marker([arr[1], arr[0]]).addTo(map).on('click', function(){
+                  window.control.toEditKYX(this.getLatLng().lat.toFixed(4), this.getLatLng().lng.toFixed(3));
+                });
+
+
+              } else if(features[x].geometry.type=="LineString"){//当类型为线段时
+
+                var arr1 = features[x].geometry.coordinates;
+
+                polyline = L.polyline([ [arr1[0][1],arr1[0][0]], [arr1[1][1],arr1[1][0]] ], {color: 'red'}).addTo(map);
+                window.control.addKYX(arr1[0][1], arr1[0][0], arr1[1][1], arr1[1][0]);
+                window.control.logd("kut", arr1[0][1]+"\n"+arr1[0][0]+"\n"+arr1[1][1]+"\n"+arr1[1][0]);
+
+                var myIcon = L.icon({
+                  iconUrl: 'test1.png',
+                  iconRetinaUrl: 'test1.png',
+                  iconSize: [20, 20],
+                  shadowUrl: 'test1.png',
+                  shadowRetinaUrl: 'test1.png',
+                  shadowSize: [20, 20],
+                });
+
+                var mark = L.marker([(arr1[0][1]+arr1[1][1])/2, (arr1[0][0]+arr1[1][0])/2], {icon:myIcon,title:(index++)+''}).addTo(map)
+                .on('click', function(){
+                  var index = parseInt(this.options.title);;
+                  window.control.toEditKYX(index);
+                });
+
+              }
+            }
+
+		}
+        }
+
+
+
+
+		//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
+
+		//restoreLayer();
+
+        /*
+        重新定位当前位置
+        */
+        function reset(){
+          window.control.toast();
+          map.panTo([getY(), getX()], {animate:true});
+        }
+
+        /*
+        获取当前位置的x坐标
+        */
+        function getX(){
+          var x = window.control.getX();
+          return x;
+        }
+
+        /*
+        获取当前位置的y坐标
+        */
+        function getY(){
+          var y = window.control.getY();
+          return y;
+        }
+
+        var lat2;
+        var lng2;
+
+        //var kyxPointsArr = {title:'', points:[]};//存放着多个跨越线点位信息
+
+        function Kyx(title, points){
+          this.title = title;
+          this.points = points;
+          return this;
+        }
+        var kyxPoints;
+        var kyxStartPoint;//代表着一条跨越线开始点的点位信息
+        var kyxEndPoint;//代表着一条跨越线结束点的点位信息
+        /*
+        标注跨越线起点
+        */
+        function markKYX_Start(kyxId){
+          var mark = L.marker(map.getCenter());
+          mark.addTo(map);
+          //mark.on('click', editKYX(mark));
+          var geojson = mark.toGeoJSON();
+          geojson.properties.title = kyxId;
+          collection.features.push(geojson);
+          var point = map.getCenter();
+          kyxStartPoint = [point.lat, point.lng];
+          window.control.logd("tag100", point.lat+"  "+point.lng)
+        }
+
+        /*
+        标注跨越线结点
+        */
+        function markKYX_End(kyxId){
+          var mark = L.marker(map.getCenter());
+          mark.addTo(map)
+          //mark.on('click', editKYX(mark));
+          var geojson = mark.toGeoJSON();
+          geojson.properties.title = kyxId;
+          collection.features.push(geojson);
+
+          var point = map.getCenter();
+          kyxEndPoint = [point.lat, point.lng];
+          window.control.logd("tag100", point.lat+"  "+point.lng)
+          kyxPoints = [kyxStartPoint, kyxEndPoint];
+
+          var kyx = new Kyx(kyxId, kyxPoints);
+
+          var kyxStr = JSON.stringify(kyx);
+          window.control.saveKyx(kyxStr);
+          window.control.logd("tag100", kyx.points[0][0]+"  "+kyx.points[0][1]+"  "+kyx.points[1][0]+"  "+kyx.points[1][1]);
+          window.control.addKYXAddData(kyx.points[0][0], kyx.points[0][1], kyx.points[1][0], kyx.points[1][1]);
+
+
+        }
+
+        function deleteJSON(id){
+             var str = window.control.getKyx();
+             var jsonObj = JSON.parse(str);
+             var newObj = [];
+             for(x in jsonObj){
+                var title = jsonObj[x].title;
+                if(title != id){
+                    newObj.push(jsonObj[x]);
+                    //jsonObj.splice(x, 1);
+                    //alert("删除了一条线，ID是"+title);
+                }
+             }
+             var end = JSON.stringify(newObj);
+             window.control.logd("tag88", "删除后保存下来的数据是"+end);
+             window.control.saveAllKyx(end);
+             window.location.reload();
+        }
+
+        function initKYX(){
+            var str = window.control.getKyx();
+
+            var jsonObj = JSON.parse(str);
+            alert("有多少条数据："+jsonObj.length);
+            for(x in jsonObj){
+                var title = jsonObj[x].title;
+                var points = jsonObj[x].points;
+                var mark1 = L.marker([points[0][0], points[0][1]]).addTo(map);
+                var mark2 = L.marker([points[1][0], points[1][1]]).addTo(map);
+                var polyline = L.polyline([L.latLng(points[0][0],  points[0][1]), L.latLng(points[1][0], points[1][1])], {color: 'blue', weight:14}).addTo(map).on('click', function(){window.control.editKuaYueLine(title)});
+                map.fitBounds(polyline.getBounds());
+            }
+        }
+
+
+        /*
+        在两点之间连线
+        */
+        function connectKYX(x1, y1, x2, y2, id){
+
+          polyline = L.polyline([L.latLng(x1, y1), L.latLng(x2, y2)], {color: 'blue', weight:12}).addTo(map).on('click', function(){window.control.editKuaYueLine(id)});
+          map.fitBounds(polyline.getBounds());
+
+          //collection.features.push(polyline.toGeoJSON());
+          //window.control.log(JSON.stringify(collection)+"  dudu");
+          //window.control.saveGeoJson(JSON.stringify(collection));
+
+        }
+
+        /*
+        编辑跨越线
+        */
+        function editKYX(id){
+          window.control.editKuaYueLine(id);
+        }
+
+
+        /*
+        获取地理JSON数据,给地图添加覆盖物
+        */
+		/*var restoreLayer = function(){
+		  var str = window.control.getGeoJson();
+		  if(str !== "" && str !== undefined && str !== null){
+            collection = JSON.parse(str);
+            window.control.log(str);
+            var jsonObj = JSON.parse(str);
+            window.control.log(jsonObj.type);
+            var features = jsonObj.features;
+            window.control.log(features.length);
+            for(x in features){
+             window.control.log(features[x].geometry.type+"<br>");
+              if(features[x].geometry.type=="Point"){
+                window.control.log(features[x].geometry.coordinates[0]);
+                var arr = features[x].geometry.coordinates;
+                var mark = L.marker([arr[1], arr[0]]).addTo(map);
+
+
+                mark.on('click', editKYX(id));
+
+              } else if(features[x].geometry.type=="LineString"){
+                var arr1 = features[x].geometry.coordinates;
+
+                polyline = L.polyline([ [arr1[0][1],arr1[0][0]], [arr1[1][1],arr1[1][0]] ], {color: 'red'}).addTo(map);
+              }
+            }
+		  } else {
+		    collection = {
+            "type": "FeatureCollection",
+            "features": []
+            }
+		  }
+
+
+		}*/
+
+
 
 </script>
 </body>
