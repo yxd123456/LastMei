@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -30,6 +31,10 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
 import com.hz.MainApplication;
 import com.hz.R;
 import com.hz.activity.CrossingLineActivity;
@@ -131,7 +136,6 @@ public class WebMapActivity extends CordovaActivity {
     private String kyxX1, kyxY1, kyxX2, kyxY2;
     private KuaYueXian kuaYueXian_fromDb = null;//接受从数据库中查找到的对应跨越线
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -142,14 +146,10 @@ public class WebMapActivity extends CordovaActivity {
         locationUtils = new LocationUtils(this);
         tags.addAll(YeUtils.stringToList((String) SharedPreferencesUtils.getParam(context, TAGS, "")));
         webView.addJavascriptInterface(new JsInteration(), "control");
-        new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    loadUrl("file:///android_asset/index.html");
-                }
-        }).start();
-
+         loadUrl("file:///android_asset/index.html");
     }
+
+
 
     public void editKYX(View v){
         Intent intent = new Intent(WebMapActivity.this, CrossingLineActivity.class);
@@ -582,6 +582,14 @@ public class WebMapActivity extends CordovaActivity {
         }
 
         @JavascriptInterface
+        public void editPolyline( String id){
+                Intent intent = new Intent(WebMapActivity.this, PointEditActivity.class);
+                intent.putExtra(POINT_TYPE, 8);
+                intent.putExtra(PointEditActivity.ID, id);
+                startActivityForResult(intent, 3);
+        }
+
+        @JavascriptInterface
         public void editLiGan(int type, String id){
             if(!flag_connect_line){
                 Intent intent = new Intent(WebMapActivity.this, PointEditActivity.class);
@@ -812,7 +820,7 @@ public class WebMapActivity extends CordovaActivity {
         ll_point_select.setVisibility(View.VISIBLE);
     }
 
-    public void D(View v){
+    public void line(View v){
         ll_connect_line.setVisibility(View.VISIBLE);
         flag_connect_line = true;
     }
@@ -833,18 +841,17 @@ public class WebMapActivity extends CordovaActivity {
         List<String> list = YeUtils.stringToList(preData);//将该数据分割为数组，每个元素代表了一组连线数据
         //Log.d("tag18", list.size()+" "+list.get(0));
         String[] arr = new String[list.size()+1];
+        String uuid = UUID.randomUUID().toString();
         for (int i = 0; i < arr.length; i++) {
             if(i != (arr.length-1)){
-                arr[i] = list.get(i);
+                arr[i] = "{id:"+uuid+",points:"+list.get(i)+"}";
                 Log.d("want", "关键位1 "+arr[i]);
             } else {
-                arr[i] = lastData;
+                arr[i] = "{id:"+uuid+",points:"+lastData+"}";
                 Log.d("want", "关键位2 "+arr[i]);
             }
         }
-
         List<String> newList = Arrays.asList(arr);
-
         String newData = YeUtils.listToString(newList);//将该数组转换为字符串
         Log.d("tag18", "最终保存的连线数据是"+newData);
         jsInteration.saveLastPolylinesData(newData);//保存最终生成的数据
@@ -860,7 +867,7 @@ public class WebMapActivity extends CordovaActivity {
         //String[] arr = jsInteration.getPolylines();
         //JSONArray jsonArray = JSONArray.fromObject(arr);
         //Log.d("tag11", "jsonArray是" + jsonArray);
-        webView.loadUrl("javascript:connectLine()");//将此次选择的点全部进行连线
+        webView.loadUrl("javascript:connectLine('"+true+"')");//将此次选择的点全部进行连线
         //将图标颜色变为默认
         jsInteration.savePolylinesData("");//将临时的数据存储清空
         webView.loadUrl("javascript:clearPolylines()");//清空临时数组
