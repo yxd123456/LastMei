@@ -3,11 +3,14 @@ package com.hz.activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,7 +22,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.GridView;
@@ -28,6 +34,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,10 +48,12 @@ import com.hz.adapter.CommonAdapter;
 import com.hz.adapter.GalleryAdapter;
 import com.hz.adapter.ViewHolder;
 import com.hz.entity.BianYaXiang;
+import com.hz.entity.Daoxian;
 import com.hz.entity.DianLanJing;
 import com.hz.entity.HuBiao;
 import com.hz.entity.KaiBiSuo;
 import com.hz.entity.LiGan;
+import com.hz.entity.Polyline;
 import com.hz.entity.XiangShiBianYaZhan;
 import com.hz.entity.XiangShiKaiGuanZhan;
 import com.hz.util.BitmapCompressUtils;
@@ -67,6 +76,7 @@ public class PointEditActivity extends AppCompatActivity {
     public static final String TYPE = "type";
     public static final String ID = "id";
     public static final String DELETE = "delete";
+    public static final String CANCEL = "cancel";
     private Bitmap bitmapSelect;
     private LinearLayout ll_need_add_other_view;
     private int type;
@@ -84,7 +94,10 @@ public class PointEditActivity extends AppCompatActivity {
             et_bianyaqi_rongliang,//变压器容量
             et_zhaomingbiao,//照明表
             et_donglibiao,//动力表
-            et_jiehuxian_changdu;//接户线长度
+            et_jiehuxian_changdu,//接户线长度
+            et_line_name,//线名称
+            et_guige_xianshu,//规格线数
+            et_line_comment;
     private RadioGroup rg_point_state;
     private RadioButton rb1, rb2, rb3;
     private GridView gv_photo;
@@ -104,6 +117,15 @@ public class PointEditActivity extends AppCompatActivity {
     private String id;
     private boolean flag_need_set_id = false;
     private boolean flag_could_delete = false;
+    private Polyline polyline;
+    private ListView lv_daoxian_dianlan;
+    private CommonAdapter adapter_dd;
+    private List<Daoxian> list_dd = new ArrayList();
+    private Spinner sp_type, sp_new;
+    private AutoCompleteTextView et_dd, et_dd_num;
+    private Button btn_dd;
+    private Handler handler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,10 +204,125 @@ public class PointEditActivity extends AppCompatActivity {
                 initFourView();
                 initSevenData();
                 break;
+            case 8:
+                initEightView();
+                initEightData();
         }
         if(gv_photo != null)
             gv_photo.setAdapter(adapter);
 
+    }
+
+    private void initEightView() {
+        ll_need_add_other_view.addView(inflater.inflate(R.layout.daoxian_dianlan, null));
+        et_line_name = (ValidaterEditText) findViewById(R.id.line_name);
+        et_guige_xianshu = (ValidaterEditText) findViewById(R.id.guige_xianshu);
+        et_line_comment = (ValidaterEditText) findViewById(R.id.line_comment);
+        gv_photo = (GridView) findViewById(R.id.gv_photo);
+        lv_daoxian_dianlan = (ListView)findViewById(R.id.lv_daoxian_dianlan);
+        adapter_dd = new CommonAdapter(this, list_dd, R.layout.cell_dd, new CommonAdapter.OnGetViewHolderListener() {
+            @Override
+            public void setConvertView(final ViewHolder holder, final int position) {
+                btn_dd = holder.getView(R.id.btn_clear);
+                btn_dd.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        list_dd.remove(position);
+                        adapter_dd.notifyDataSetChanged();
+                    }
+                });
+                et_dd = holder.getView(R.id.et_dd);
+                et_dd.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        View view = LayoutInflater.from(PointEditActivity.this).inflate(R.layout.dxdl, null);
+                        final AutoCompleteTextView view1 = (AutoCompleteTextView) view.findViewById(R.id.actv);
+                        ListView view2 = (ListView) view.findViewById(R.id.lv_dxdl);
+                        view1.setThreshold(1);
+                        view1.setFocusable(true);
+                        view1.setFocusableInTouchMode(true);
+                        view1.requestFocus();
+                        final String[] strArr = {"GJ-80","GJ-30","GJ-50","JL/G1A,150/20","JL/G1A,240/30","JL/G1A,70/10",
+                                "JKLHYJ/Q-10/150","JKLHYJ/Q-10/240","JKLHYJ/Q-10/70","JKLYJ-10/150","JKLYJ-10/240",
+                                "JKLYJ-10/35","JKLYJ-10/70","ZC-YJV22-8.7/15-3*300","ZC-YJV22-8.7/15-3*400",
+                                "ZC-YJV22-8.7/15-3*185","ZC-YJV22-8.7/15-3*70","BV-50"};
+                        final ArrayAdapter adapter = new ArrayAdapter(PointEditActivity.this, android.R.layout.simple_list_item_1, strArr);
+                        view1.setAdapter(adapter);
+                        view2.setAdapter(adapter);
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(PointEditActivity.this).setTitle("导线/电缆")
+                                .setView(view).setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        ((AutoCompleteTextView)holder.getView(R.id.et_dd)).setText(view1.getText().toString());
+                                    }
+                                }).setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        dialog.dismiss();
+                                    }
+                                });
+                        AlertDialog dialog = builder.create();
+                        dialog.show();
+
+                        view2.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                            @Override
+                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                view1.setText(strArr[position]);
+                            }
+                        });
+                    }
+                });
+                et_dd_num = holder.getView(R.id.et_dd_num);
+                sp_type = holder.getView(R.id.spinner_dd_type);
+                sp_new = holder.getView(R.id.spinner_dd_new);
+                sp_type.setAdapter(new ArrayAdapter<>(PointEditActivity.this, android.R.layout.simple_dropdown_item_1line, new String[]{"导线", "电缆"}));
+                sp_new.setAdapter(new ArrayAdapter<>(PointEditActivity.this, android.R.layout.simple_dropdown_item_1line, new String[]{"新", "旧"}));
+                ((AutoCompleteTextView)holder.getView(R.id.et_dd)).setText(list_dd.get(position).getModel());
+                ((AutoCompleteTextView)holder.getView(R.id.et_dd_num)).setText(list_dd.get(position).getNum());
+                if(list_dd.get(position).getIsNew()!=null){
+                    sp_new.setSelection((list_dd.get(position).getIsNew().equals("新"))?0:1);
+                }
+                if(list_dd.get(position).getType()!=null){
+                    sp_type.setSelection(list_dd.get(position).getType().equals("导线")?0:1);
+                }
+            }
+        });
+        lv_daoxian_dianlan.setAdapter(adapter_dd);
+    }
+
+    private void initEightData(){
+        Log.d("mimi", "此处的id是"+id);
+        try {
+            polyline = dbUtils.findFirst(Polyline.class, WhereBuilder.b("id", "=", id));
+        } catch (DbException e) {
+            e.printStackTrace();
+        }
+        Log.d("mimi", "poly为空吗"+(polyline==null));
+        if(polyline != null){
+            flag_could_delete = true;
+            String str = polyline.getDaoXian();
+            List<Daoxian> dxList = YeUtils.jsonToDaoxianList(str);
+            list_dd.addAll(dxList);
+            adapter_dd.notifyDataSetChanged();
+            et_line_name.setText(polyline.getLineName());
+            et_line_comment.setText(polyline.getLineComment());
+            et_guige_xianshu.setText(polyline.getGuiGeXianShu());
+            if (polyline.getBitmaps()!=null){
+                List<String> list = YeUtils.stringToList(polyline.getBitmaps());
+                bitmapList.addAll(list);
+                adapter.notifyDataSetChanged();
+            }
+        }
+    }
+
+    public void addDD(View v){
+        if(list_dd.size() == 3){
+            lv_daoxian_dianlan.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    YeUtils.dip2px(this, 150)));
+        }
+        list_dd.add(new Daoxian());
+        adapter_dd.notifyDataSetChanged();
     }
 
     private void initSevenData() {
@@ -324,14 +461,12 @@ public class PointEditActivity extends AppCompatActivity {
     }
 
     private void initTwoData() {
-        Toast.makeText(this, "执行了1", Toast.LENGTH_SHORT).show();
         try {
             bianYaXiang = dbUtils.findFirst(BianYaXiang.class, WhereBuilder.b("id", "=", id));
         } catch (DbException e) {
             e.printStackTrace();
         }
         if(bianYaXiang != null){
-            Toast.makeText(this, "执行了2", Toast.LENGTH_SHORT).show();
             ll_need_add_other_view.addView(inflater.inflate(R.layout.ye_bianyaxiang, null));
             et_point_name.setText(bianYaXiang.getDianWeiMingCheng());
             et_bianyaqi_rongliang.setText(bianYaXiang.getBianYaQiRongLiang());
@@ -376,6 +511,7 @@ public class PointEditActivity extends AppCompatActivity {
                 if(flag_could_delete){
                     try {
                         dbUtils.delete(bianYaXiang);
+                        Log.d("tag7", "删除了实体类对象");
                     } catch (DbException e) {
                         e.printStackTrace();
                     }
@@ -426,17 +562,25 @@ public class PointEditActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+            case 8:
+                if(flag_could_delete){
+                    try {
+                        dbUtils.delete(polyline);
+                    } catch (DbException e) {
+                        e.printStackTrace();
+                    }
+                }
                 break;
         }
         Intent intent = new Intent();
         Bundle bundle = new Bundle();
         bundle.putInt(TYPE, type);
-        Toast.makeText(this, "type的值是" + type, Toast.LENGTH_SHORT).show();
+        Log.d("tag7", "type的值是" + type);
         bundle.putString(ID, id);
         bundle.putBoolean(DELETE,  true);
         intent.putExtras(bundle);
         setResult(RESULT_OK,  intent);
-        Toast.makeText(PointEditActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+        Toast.makeText(PointEditActivity.this, "删除成功, 等待刷新", Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -587,6 +731,38 @@ public class PointEditActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
                 break;
+            case 8:
+                if(polyline == null){
+                    polyline = new Polyline();
+                }
+                if(polyline.getId()==null){
+                    polyline.setId(id);
+                }
+                ViewGroup cellView = null;
+                Daoxian daoxian = null;
+                for (int i = 0; i < lv_daoxian_dianlan.getChildCount(); i++) {
+                    Log.d("Test", lv_daoxian_dianlan.getChildCount()+"  "+list_dd.size());
+                    daoxian = list_dd.get(i);
+                    cellView = (ViewGroup) lv_daoxian_dianlan.getChildAt(i);
+                    daoxian.setType(((Spinner)cellView.getChildAt(1)).getSelectedItem().toString());
+                    daoxian.setIsNew(((Spinner)cellView.getChildAt(2)).getSelectedItem().toString());
+                    daoxian.setNum(((EditText)cellView.findViewById(R.id.et_dd_num)).getText().toString());
+                    daoxian.setModel(((EditText)cellView.findViewById(R.id.et_dd)).getText().toString());
+                }
+                String daoxianData = YeUtils.daoxianListToJson(list_dd);
+                polyline.setDaoXian(daoxianData);
+                Log.d("Test", "最终保存的数据是"+daoxianData);
+                polyline.setLineName(et_line_name.getText().toString());
+                polyline.setGuiGeXianShu(et_guige_xianshu.getText().toString());
+                polyline.setLineComment(et_line_comment.getText().toString());
+                bitmapList.remove(0);
+                polyline.setBitmaps(YeUtils.listToString(bitmapList));
+                try {
+                    dbUtils.saveOrUpdate(polyline);
+                } catch (DbException e) {
+                    e.printStackTrace();
+                }
+                break;
         }
         Intent intent = new Intent();
         Bundle bundle = new Bundle();
@@ -620,7 +796,6 @@ public class PointEditActivity extends AppCompatActivity {
     private void initTwoView() {
         if(ll_need_add_other_view.getChildCount() == 0){
             ll_need_add_other_view.addView(inflater.inflate(R.layout.ye_bianyaxiang, null));
-            Toast.makeText(this, "疑惑", Toast.LENGTH_SHORT).show();
         }
         et_point_name = (ValidaterEditText) findViewById(R.id.point_name);
         et_bianyaqi_rongliang = (ValidaterEditText) findViewById(R.id.bianyaqi_rongliang);
@@ -632,7 +807,20 @@ public class PointEditActivity extends AppCompatActivity {
         gv_photo = (GridView) findViewById(R.id.gv_photo);
     }
 
-    private void initOneData() {;
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        Bundle bundle = new Bundle();
+        bundle.putInt(TYPE, type);
+        bundle.putString(ID, id);
+        bundle.putBoolean(CANCEL, true);
+        intent.putExtras(bundle);
+        setResult(RESULT_OK,  intent);
+        finish();
+    }
+
+
+    private void initOneData() {
         try {
             liGan = dbUtils.findFirst(LiGan.class, WhereBuilder.b("id", "=", id));
         } catch (DbException e) {
