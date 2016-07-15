@@ -16,6 +16,7 @@ import android.widget.Toast;
 import com.hz.MainApplication;
 import com.hz.R;
 import com.hz.activity.ProjectDataPreviewActivity;
+import com.hz.activity.YeUtils;
 import com.hz.common.Constans;
 import com.hz.entity.ResponseStateEntity;
 import com.hz.fragment.ProjectListFragment;
@@ -38,6 +39,7 @@ import com.squareup.okhttp.RequestBody;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
@@ -192,21 +194,29 @@ public class ProjectMapDataUploadService extends Service {
                 try {
                     //上传点位列表信息
                     List<MapPoiEntity> mapPoiEntityList = DataBaseManagerHelper.getInstance().getAllPointByProjectIdContactRemoved(mProjectEntity.getId(), userId);
+
+                    Log.d("gogogo", "长度是" + mapPoiEntityList.size());
+                    for (int i = 0; i < mapPoiEntityList.size(); i++) {
+
+                        Log.d("gogogo", mapPoiEntityList.get(i).toString());
+                    }
                     success = postTargetPointsToServer(mapPoiEntityList);
                     if (!success) {
+
                         return 1000;
                     }
-
+                    YeUtils.log(4);
                     //上传采集的线信息
                     List<MapLineEntity> mapLineEntityList = DataBaseManagerHelper.getInstance().getAlllinesByProjectIdContactRemoved(mProjectEntity.getId());
                     for (MapLineEntity mapLineEntity : mapLineEntityList) {
                         mapLineEntity.getMapLineItemEntityList();//查询点位关联的导线/拉线信息
+                        Log.d("line", mapLineEntity.toString());
                     }
                     success = postTargetLinesToServer(mapLineEntityList);
                     if (!success) {
                         return 1001;
                     }
-
+                    YeUtils.log(5);
                     //上传点位图片信息
                     for (MapPoiEntity poiEntity : mapPoiEntityList) {
                         poiEntity.setPointGalleryLists(DataBaseManagerHelper.getInstance().getPointImagesByPointIdContactRemoved(poiEntity.getPointId()));
@@ -261,6 +271,7 @@ public class ProjectMapDataUploadService extends Service {
      */
     public boolean postTargetPointsToServer(List<MapPoiEntity> entityList) throws Exception {
         String pointJsonList = JsonUtil.convertObjToJson(entityList);
+        Toast.makeText(this, pointJsonList + "*******", Toast.LENGTH_SHORT).show();
         if (pointJsonList == null) {
             return false;
         }
@@ -293,18 +304,30 @@ public class ProjectMapDataUploadService extends Service {
         this.mCurrentUploadImageId = galleryEntity.getImgId();
 
         MultipartBuilder multipartBuilder = new MultipartBuilder().type(MultipartBuilder.FORM);
+        //新建一个MultipartBuilder对象
         File pointImage = new File(galleryEntity.getImgAddress());
+        Log.d("pdd", galleryEntity.getImgAddress());
+        //根据图片地址来生成一个点位图片文件
         RequestBody fileRequestBody = RequestBody.create(MEDIA_TYPE_JPEG, pointImage);
+        //根据点位图片及其格式来创建一个请求体
         multipartBuilder.addFormDataPart(Constans.POST_IMAGE_KEY, pointImage.getName(), fileRequestBody);//图片信息
+        Log.d("pdd", pointImage.getName());
+        //添加一个表单数据体，信息：关键词、文件名、文件请求体
         multipartBuilder.addFormDataPart(Constans.POST_POINT_ID, galleryPointId);//图片点位ID
+        Log.d("pdd", galleryPointId);
+        //添加一个表单数据体，信息：关键词点位ID、图片点位ID
         multipartBuilder.addFormDataPart(Constans.POST_PROJ_ID, galleryProjectId);//图片项目ID
-        //点位实体json信息
+        Log.d("pdd", galleryProjectId);
+        //添加一个表单数据体，信息：关键词项目ID、图片项目ID
         String pointGalleryJson = JsonUtil.convertObjToJson(galleryEntity);
+        Log.d("pdd", pointGalleryJson);
+        //点位实体json信息
         if (pointGalleryJson == null) {
             return false;
         }
-        multipartBuilder.addFormDataPart(Constans.POST_POINT_GALLERY_ENTITY, pointGalleryJson);//图片实体信息
-        RequestBody requestBody = multipartBuilder.build();
+        multipartBuilder.addFormDataPart(Constans.POST_POINT_GALLERY_ENTITY, pointGalleryJson);
+        //图片实体信息
+        RequestBody requestBody = multipartBuilder.build();//建立请求体
 
         ProgressRequestBody progressRequestBody = new ProgressRequestBody(requestBody, progressListener);
         Request requestPost = new Request.Builder().url(Constans.POST_IMAGES_URL).post(progressRequestBody).build();
